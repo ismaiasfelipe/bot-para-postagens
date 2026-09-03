@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "project-4d4a1426-15ef-4d81-8a8",
+  "private_key_id": "fa8b82c5eb3a1d9d9c7b8439974d443b0f862714",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCezlv3zHnYZvzK\nmhHLQ+jdz0+GNbOL157Toh0B9ZrJNuMNP1wX+3iUBtuid5MmmzxIeuVD5v7C8LVu\nhu42Fj8+H/kkWqIiyEUGFshE5BbgQlhkfWNGielaK2/0iO5TL35pnEbzEl29fXC3\nbR8Ti/JcOJWJsJVqlag7IuSAOYUEERCeSh4gtXEzodR1eghfNgyNxM99mAMSGnNM\nraGiAYHJipx91fJUYfQW4zS7Z3TR+JRqX7+1YC3sDXNDZWOtI0yzwlEEOOr/JfGe\nIP8kQYtJzBG5V1JxhvOw6W/F9yY+Hl3m/wk6Uqw1Ug14wxTUqi3pnQDKbzIWRN49\npZ99cGGjAgMBAAECggEAGjcBeonwETeLAlzllBLdRYRb4dFKlsqcxt3LgQ/Moeuk\nFoM/jhvufy0Uo6Cuk2Br1qEm6IsgwghfQuQWPap1fSllBMnLWweJUWSAYdLvLcz1\n73y9Xx8T/NUP0aOrB+NesEticOy2ubmT2kuyphTjiLK0iLq0J5iV4VE0vDACk7WE\n3ykSTJ2ZCXO/CaxEBU2MepSrWU1IjptdEymP4Kghpds/Fk3LIZkXzeLI86HO9C7a\nUp5KN/AD+hedgqupnes2GcU5MUTwcyABOLGssv4uHvcgG3qS4ZGO7C/p+6KzXDHk\nhnXQrEVbMYN1dtgVgtixE1Tu5n0ABrHDxlPfVw7/SQKBgQDNHCJLN26FC/YjfxC+\ngEilBKgUjo8/XXJGxQ/Hy+jr4t3q8/aQGi7V/j9us6PboI9uaqU/HJgVQ262IJe4\nNKrJetPKDEqtSkYYYRX4AafGvcKfQylJRkICPYf4daXRGi3oM2XxttJ674ZHWf3D\n+qnYsFIOjSfGgpKLscVFvgvXiQKBgQDGNSs1aqVh2rkh1nh80OS5p9LR6U37iqIN\nfrE98Cwx8ri9SUBVT1BR+m586cDExNlDr2CoOiu1XY7t7DJQdcn/ClTP6Q4iQXhf\niLhpErOtHfY7HGvP1G1KARpy6UWnqAVohk98AlWrrGhglhFHLMs/Fhr8wm8aX0aY\nuqqzw5K4ywKBgHHKxP/jze4EV9cTnK+DrknWzoUxHinyZv76PyoCZ8POhn3eQZFq\n5UcVmg2JnkOvzUNd6TWdYIaTda2XYXTxyzqiaTN0JE4FoePOoQiJqpIpHvuKoDIl\nx2NEzdW7N3ZNxuBG+6zhV96aWm3lcFM1EtvD3pJyH3oTYMgdpStvJ1S5AoGAfGtV\nw0M9q450FiSeH6O1YEFT2ka8mADvNs9njTzdUUFO7Cs2Qhb2kW9Fug213w6+X3mQ\nkClr1H51QS66ar113i3rDVP7dk9os3eMYxDFTw92yKZPmvd63zCQHMAH5HVZZ8Kf\n1HVWt9wS7UZmdCpPLzu+FxoqSgCyvR64Fv3WdT8CgYByCfOxEA6Wo22OpxLhaZNI\ngyOzkHcUmHDXbqtousfviMqcqFrYe4brcyooyYlb5TXkJX8XNDCRPQ/p+KpsO/o6\n/BPK464DFQ6xToXZetBR2cNRbg8dpQcw34lbS7y4mIhh97gm34SnTp9nHxgctdlK\nHuda1r6R/EtQT30+/5r0sw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "bot-il-variedades@project-4d4a1426-15ef-4d81-8a8.iam.gserviceaccount.com",
+  "client_id": "107667607715013723340",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bot-il-variedades%40project-4d4a1426-15ef-4d81-8a8.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
