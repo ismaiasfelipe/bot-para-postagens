@@ -205,11 +205,32 @@ mas populá-la deve melhorar a qualidade das gerações com o tempo.
 - [x] Filtro automático de qualidade (05/08/2026) -- verificar_troca_estampa()
       e trocar_estampa_com_verificacao() em gerar_carrossel_gemini.py, ver
       seção própria abaixo.
-- [ ] Conexão com a Instagram Graph API (conta Business + App aprovado na Meta)
-- [ ] Upload das imagens geradas para um storage público (S3/GCS/Cloudinary)
-      -- necessário porque a API do Instagram só aceita publicar a partir
-      de uma URL pública, não upload direto de arquivo
-- [ ] Agendador (cron) rodando o pipeline inteiro uma vez por semana
+- [x] Conexão com a Instagram Graph API (03/09/2026) -- App "IL Variedades
+      Bot" criado no Meta for Developers, vinculado ao BM 04 (IL Variedades
+      Enxovais & Lar), usando o fluxo novo "Instagram API with Instagram
+      Login" (graph.instagram.com, sem depender de token de Página do
+      Facebook). Permissões ativas: instagram_business_basic,
+      instagram_business_content_publish, instagram_business_manage_messages.
+      Conta @ilvariedadesenxovais autorizada como testadora. Credenciais em
+      `.env` (IG_APP_ID, IG_APP_SECRET, IG_USER_ID, IG_ACCESS_TOKEN).
+      `publicar_instagram.py` criado com testar_conexao(),
+      trocar_por_token_longa_duracao() (grant ig_exchange_token),
+      renovar_token() via refresh_access_token (grant ig_refresh_token --
+      o token gerado pelo botao "Gerar token" do painel ja vem de longa
+      duracao/60 dias, exchange normal da "Session key invalid" nele;
+      refresh funciona), publicar_carrossel() e publicar_imagem_unica().
+      **Testado e validado em produção**: carrossel real
+      (carrossel_p009_vitrine, jogo de quarto) publicado no feed de
+      @ilvariedadesenxovais via upload_storage.enviar_carrossel() +
+      publicar_instagram.publicar_carrossel() -- media_count da conta subiu
+      de 26 para 27, confirmando publicação real.
+      **Atenção**: o token de longa duração dura ~60 dias e precisa ser
+      renovado antes de expirar (chamar refresh_access_token de novo e
+      atualizar IG_ACCESS_TOKEN no .env) -- ainda não está automatizado.
+- [x] Upload das imagens geradas para um storage público (validado
+      05/08/2026, reconfirmado em produção real 03/09/2026)
+- [ ] Agendador (cron) rodando o pipeline inteiro uma vez por semana --
+      próximo item do roadmap agora que a publicação está validada
 - [x] Orientações das 23 campanhas definidas e documentadas dentro de
       cada pasta no Drive (11 sazonais/datas comemorativas + 12
       promoções relâmpago mensais "Dia X do X")
@@ -349,11 +370,24 @@ precisou criar credencial nova.
 **Testado e validado**: upload de um slide real + confirmação via `curl`
 externo de que a URL responde 200 com o conteúdo certo.
 
-## Próximo passo imediato (atualizado 05/08/2026)
+## Próximo passo imediato (atualizado 03/09/2026)
 Falta, em ordem de dependência:
-1. Conexão com a Instagram Graph API (conta Business + App aprovado na Meta).
-2. Agendador (cron) rodando o pipeline semanalmente, cruzando com o
-   calendário de campanhas (23 campanhas já documentadas no Drive).
-4. Conforme o usuário for subindo mais PNGs de "produto no ambiente" no
+1. Agendador (cron) rodando o pipeline semanalmente, cruzando com o
+   calendário de campanhas (23 campanhas já documentadas no Drive) --
+   agora que geração + montagem + upload + publicação real no Instagram
+   já estão todas validadas ponta a ponta.
+2. Renovação do token de acesso do Instagram antes de expirar (~60 dias
+   a partir de 03/09/2026, ou seja, por volta de 02/11/2026) -- rodar de
+   novo o refresh via `publicar_instagram.py` e atualizar IG_ACCESS_TOKEN
+   no `.env`. Vale automatizar isso dentro do próprio agendador.
+3. Conforme o usuário for subindo mais PNGs de "produto no ambiente" no
    Drive, rodar conectar_drive.py de novo pra ampliar a cobertura além
    dos 10 produtos atuais (hoje só "cama (quarto)" tem fotos completas).
+
+## Repositório GitHub (criado 03/09/2026)
+Projeto agora também vive em `github.com/ismaiasfelipe/bot-para-postagens`
+(privado), sincronizado localmente porque a pasta `Documents\Enxovais`
+já é compartilhada entre os dois PCs do usuário via OneDrive -- o clone
+git nem precisou ser feito manualmente no segundo PC, o `.git` sincronizou
+junto. Repositório inclui tudo, inclusive `credenciais_drive.json` e
+`.env` (decisão explícita do usuário, mesma conta em ambos os PCs).
