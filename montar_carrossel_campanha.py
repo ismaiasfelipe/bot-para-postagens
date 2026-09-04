@@ -41,10 +41,28 @@ OFF_WHITE = "#FAF9F6"
 PASTA_ASSETS = Path("assets")
 LOGO_PADRAO = PASTA_ASSETS / "logo_badge.png"
 
-PASTA_FONTES = Path(r"C:\Windows\Fonts")
-FONTE_TITULO = PASTA_FONTES / "segoeuib.ttf"
-FONTE_TEXTO = PASTA_FONTES / "segoeui.ttf"
-FONTE_SCRIPT = PASTA_FONTES / "LHANDW.TTF"  # Lucida Handwriting
+PASTA_FONTES = PASTA_ASSETS / "fonts"
+FONTE_TITULO = PASTA_FONTES / "OpenSans.ttf"  # variable, eixo wght -> Bold
+FONTE_TEXTO = PASTA_FONTES / "OpenSans.ttf"  # variable, eixo wght -> Regular
+FONTE_SCRIPT = PASTA_FONTES / "DancingScript.ttf"  # variable, eixo wght -> Bold
+
+
+def _carregar_fonte(caminho: Path, tamanho: int, peso: str = "Bold") -> ImageFont.FreeTypeFont:
+    """
+    Carrega uma fonte variavel (Open Sans / Dancing Script, licenca OFL,
+    embutidas em assets/fonts/) e ajusta o peso via eixo wght -- troca a
+    antiga dependencia de Segoe UI / Lucida Handwriting do Windows, que
+    nao existem no Linux (onde o GitHub Actions roda). Fontes fixas
+    (nao-variaveis) ignoram 'peso'.
+    """
+    fonte = ImageFont.truetype(str(caminho), tamanho)
+    try:
+        nomes = {n.decode() if isinstance(n, bytes) else n for n in fonte.get_variation_names()}
+        if peso in nomes:
+            fonte.set_variation_by_name(peso)
+    except OSError:
+        pass  # fonte nao e variavel, usa como esta
+    return fonte
 
 
 def _hex_para_rgb(cor_hex: str) -> tuple[int, int, int]:
@@ -129,11 +147,11 @@ def montar_slide_itens_inclusos(
     draw = ImageDraw.Draw(tela)
     x_texto, y_texto = 50, ALTURA - altura_caixa + 55
 
-    fonte_caixa_titulo = ImageFont.truetype(str(FONTE_TITULO), 34)
+    fonte_caixa_titulo = _carregar_fonte(FONTE_TITULO, 34, "Bold")
     draw.text((x_texto, y_texto), titulo_caixa, font=fonte_caixa_titulo, fill=_hex_para_rgb(ROSA_QUARTZO))
     draw.line((x_texto, y_texto + 46, x_texto + 200, y_texto + 46), fill=_hex_para_rgb(ROSA_QUARTZO), width=2)
 
-    fonte_item = ImageFont.truetype(str(FONTE_TITULO), 28)
+    fonte_item = _carregar_fonte(FONTE_TITULO, 28, "Bold")
     y = y_texto + 72
     for item in itens:
         draw.ellipse((x_texto, y + 10, x_texto + 8, y + 18), fill=_hex_para_rgb(ROXO_NOBRE))
@@ -196,7 +214,7 @@ def montar_slide_detalhes(
     x_texto = LARGURA - largura_caixa + 150
     y_texto = ALTURA - altura_caixa + 55
 
-    fonte_texto = ImageFont.truetype(str(FONTE_TITULO), 30)
+    fonte_texto = _carregar_fonte(FONTE_TITULO, 30, "Bold")
     linhas = _quebrar_linhas(texto_qualidade.upper(), fonte_texto, largura_caixa - 170, draw)
     y = y_texto + 30
     for linha in linhas:
@@ -230,8 +248,8 @@ def montar_slide_variedade(
         tela.paste(foto, (cx - raio, cy - raio), mascara_circulo)
         draw.ellipse((cx - raio, cy - raio, cx + raio, cy + raio), outline=_hex_para_rgb(ROXO_NOBRE), width=4)
 
-    fonte_central = ImageFont.truetype(str(FONTE_TITULO), 34)
-    fonte_central_destaque = ImageFont.truetype(str(FONTE_TITULO), 40)
+    fonte_central = _carregar_fonte(FONTE_TITULO, 34, "Bold")
+    fonte_central_destaque = _carregar_fonte(FONTE_TITULO, 40, "Bold")
     centro_x = LARGURA // 2
     linha1, linha2, linha3 = texto_central
     linha2 = linha2.format(n=len(fotos_estampas))
@@ -273,7 +291,7 @@ def montar_slide_duas_fotos(
     tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
     draw = ImageDraw.Draw(tela)
 
-    fonte_titulo = ImageFont.truetype(str(FONTE_TITULO), 40)
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 40, "Bold")
     largura_t = draw.textlength(titulo.upper(), font=fonte_titulo)
     draw.text(((LARGURA - largura_t) / 2, 45), titulo.upper(), font=fonte_titulo, fill=_hex_para_rgb(ROXO_NOBRE))
 
@@ -288,7 +306,7 @@ def montar_slide_duas_fotos(
         ImageDraw.Draw(mascara).rounded_rectangle((0, 0, largura_painel, altura_painel), radius=24, fill=255)
         tela.paste(foto, (x_painel, y_painel), mascara)
 
-        fonte_rotulo = ImageFont.truetype(str(FONTE_TITULO), 26)
+        fonte_rotulo = _carregar_fonte(FONTE_TITULO, 26, "Bold")
         pad_x, pad_y = 20, 10
         largura_r = draw.textlength(rotulo, font=fonte_rotulo) + pad_x * 2
         x_r = x_painel + 18
@@ -313,7 +331,7 @@ def montar_slide_grid_numerado(
     tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
     draw = ImageDraw.Draw(tela)
 
-    fonte_titulo = ImageFont.truetype(str(FONTE_TITULO), 46)
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 46, "Bold")
     linhas = titulo.upper().split(" | ")
     y_titulo = 50
     for linha in linhas:
@@ -332,7 +350,7 @@ def montar_slide_grid_numerado(
         raio_bolha = 34
         cx, cy = pos[0] + raio_bolha + 10, pos[1] + raio_bolha + 10
         draw.ellipse((cx - raio_bolha, cy - raio_bolha, cx + raio_bolha, cy + raio_bolha), fill=_hex_para_rgb(ROXO_NOBRE))
-        fonte_numero = ImageFont.truetype(str(FONTE_TITULO), 32)
+        fonte_numero = _carregar_fonte(FONTE_TITULO, 32, "Bold")
         largura_n = draw.textlength(str(numero), font=fonte_numero)
         draw.text((cx - largura_n / 2, cy - 20), str(numero), font=fonte_numero, fill=_hex_para_rgb(OFF_WHITE))
 
@@ -367,13 +385,13 @@ def montar_slide_texto(
     draw = ImageDraw.Draw(tela)
 
     centro_x = LARGURA // 2
-    fonte_titulo = ImageFont.truetype(str(FONTE_TITULO), 64)
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 64, "Bold")
     largura_max = LARGURA - 160
 
     linhas_titulo = _quebrar_linhas(titulo.upper(), fonte_titulo, largura_max, draw)
     altura_titulo = len(linhas_titulo) * 76
 
-    fonte_corpo = ImageFont.truetype(str(FONTE_TEXTO), 32)
+    fonte_corpo = _carregar_fonte(FONTE_TEXTO, 32, "Regular")
     linhas_corpo = _quebrar_linhas(corpo, fonte_corpo, largura_max, draw)
     altura_corpo = len(linhas_corpo) * 44
 
@@ -420,7 +438,7 @@ def montar_slide_zoom_cheio(
     tela = tela_rgba.convert("RGB")
     draw = ImageDraw.Draw(tela)
 
-    fonte_titulo = ImageFont.truetype(str(FONTE_TITULO), 40)
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 40, "Bold")
     _texto_centralizado(draw, LARGURA // 2, ALTURA - 90, titulo.upper(), fonte_titulo, _hex_para_rgb(ROXO_NOBRE))
 
     tela.save(caminho_saida)
@@ -445,8 +463,8 @@ def montar_slide_hero(
     draw.rectangle((0, 0, largura_banner, altura_banner), fill=_hex_para_rgb(OFF_WHITE))
     draw.rectangle((0, altura_banner - 4, largura_banner, altura_banner), fill=_hex_para_rgb(ROSA_QUARTZO))
 
-    fonte_badge1 = ImageFont.truetype(str(FONTE_TITULO), 30)
-    fonte_badge2 = ImageFont.truetype(str(FONTE_TITULO), 38)
+    fonte_badge1 = _carregar_fonte(FONTE_TITULO, 30, "Bold")
+    fonte_badge2 = _carregar_fonte(FONTE_TITULO, 38, "Bold")
     draw.text((28, 24), badge_linha1, font=fonte_badge1, fill=_hex_para_rgb(ROXO_NOBRE))
     draw.text((28, 62), badge_linha2, font=fonte_badge2, fill=_hex_para_rgb(ROSA_QUARTZO))
 
@@ -473,7 +491,7 @@ def montar_slide_hero(
 
     centro_x = LARGURA // 2
 
-    fonte_produto = ImageFont.truetype(str(FONTE_SCRIPT), 44)
+    fonte_produto = _carregar_fonte(FONTE_SCRIPT, 44, "Bold")
     linhas_produto = _quebrar_linhas(nome_produto, fonte_produto, largura_oval - 80, draw)
     y = y_oval + 55
     for linha in linhas_produto:
@@ -484,7 +502,7 @@ def montar_slide_hero(
     draw.line((centro_x - 60, y, centro_x + 60, y), fill=_hex_para_rgb(ROSA_QUARTZO), width=2)
     y += 16
 
-    fonte_marca = ImageFont.truetype(str(FONTE_TITULO), 30)
+    fonte_marca = _carregar_fonte(FONTE_TITULO, 30, "Bold")
     _texto_centralizado(draw, centro_x, y, nome_marca.upper(), fonte_marca, _hex_para_rgb(ROSA_QUARTZO))
 
     tela.save(caminho_saida)

@@ -1,0 +1,84 @@
+name: Definir tema da semana
+
+# Acionavel manualmente pelo site ou app do GitHub (Actions > este
+# workflow > Run workflow), de qualquer lugar, sem precisar do PC ligado.
+# So salva a escolha em tema_semana.json -- quem realmente gera/publica
+# e o workflow "Pipeline diario Instagram", que roda de seg a sab as 7h
+# e le esse arquivo antes de decidir o que postar.
+on:
+  workflow_dispatch:
+    inputs:
+      campanha:
+        description: "Campanha (deixe em branco p/ automatico pelo calendario)"
+        required: false
+        type: choice
+        default: ""
+        options:
+          - ""
+          - dia_1_do_1
+          - dia_2_do_2
+          - dia_3_do_3
+          - dia_4_do_4
+          - dia_5_do_5
+          - dia_6_do_6
+          - dia_7_do_7
+          - dia_8_do_8
+          - dia_9_do_9
+          - dia_10_do_10
+          - dia_11_do_11
+          - dia_12_do_12
+          - dia_das_mulheres
+          - dia_do_consumidor
+          - outono
+          - dia_dos_namorados
+          - inverno
+          - dia_das_maes
+          - primavera
+          - dia_das_criancas
+          - black_friday
+          - verao
+          - natal
+      categoria:
+        description: "Categoria em foco (opcional, sem campanha especifica)"
+        required: false
+        type: choice
+        default: ""
+        options:
+          - ""
+          - Cama
+          - Banho
+          - Mesa
+          - Sofá
+          - Infantil
+      produto:
+        description: "Forcar 1 produto especifico a semana toda (ID, ex: p009 -- opcional)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  definir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Salvar tema da semana
+        run: |
+          python _definir_tema.py \
+            --campanha "${{ inputs.campanha }}" \
+            --categoria "${{ inputs.categoria }}" \
+            --produto "${{ inputs.produto }}"
+
+      - name: Commit tema_semana.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tema_semana.json
+          git diff --cached --quiet && echo "nada mudou" || git commit -m "Define tema da semana [skip ci]"
+          git push

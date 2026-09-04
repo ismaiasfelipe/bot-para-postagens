@@ -35,6 +35,10 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # --- Configuracao ---
 
 PASTA_SAIDA = Path("saida")
@@ -354,6 +358,130 @@ def trocar_estampa_com_verificacao(
     print(f"  aviso: nao passou na verificacao apos {max_tentativas} tentativas -- "
           f"revise visualmente {caminho_atual} antes de usar")
     return caminho_atual
+
+
+def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
+    """
+    Prompt do 'juiz' geral pra foto principal do produto (nao especifico
+    de troca de estampa). Criado em 03/09/2026 depois de detectar que
+    produtos so com imagem_estampa (sem imagem_ambiente) as vezes saiam
+    com cenas genericas de decoracao completamente desconectadas do
+    produto real (ex: p002 "tapete medio" saiu com foto de quarto/cama).
+    """
+    return (
+        f"Voce e um revisor de qualidade de fotos de produto para "
+        f"e-commerce de enxovais. O produto e '{produto['nome']}' "
+        f"(categoria: {produto['categoria']}).\n"
+        f"IMAGEM 1: a foto FINAL gerada, que deveria mostrar esse produto.\n"
+        f"IMAGENS 2 em diante: {n_referencias} foto(s) real(is) de "
+        "referencia do produto (ambiente e/ou tecido cru).\n\n"
+        "Confira:\n"
+        "1. A IMAGEM 1 mostra claramente um produto da categoria "
+        f"'{produto['categoria']}' reconhecivel como '{produto['nome']}'? "
+        "Uma foto de cena generica de decoracao onde o produto nao "
+        "aparece claramente, ou que mostra um item de categoria "
+        "diferente, deve ser REPROVADA.\n"
+        "2. O padrao/estampa e a cor do tecido na IMAGEM 1 batem com as "
+        "referencias reais fornecidas? Um padrao/cor sem nenhuma relacao "
+        "com o real deve ser REPROVADO.\n\n"
+        "Responda EXATAMENTE nesse formato, sem mais nada:\n"
+        "LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
+        "'NAO' se reprovada por qualquer um dos dois motivos acima.\n"
+        "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
+        "poder corrigir). Se SIM, deixe a linha 2 vazia."
+    )
+
+
+def verificar_foto_hero(imagem_gerada: str, referencias: list[str], produto: dict) -> tuple[bool, str]:
+    """
+    Juiz geral (nao especifico de troca de estampa): confere se a foto
+    gerada realmente retrata o produto certo, pra evitar cenas genericas
+    desconectadas da referencia real. So texto de resposta, sem gerar
+    imagem -- bem mais barato que uma geracao nova.
+    """
+    client = _obter_cliente()
+    partes = []
+    for caminho in [imagem_gerada] + referencias:
+        dados, mime_type = _carregar_bytes_imagem(caminho)
+        partes.append(_part_de_bytes(dados, mime_type))
+    partes.append(montar_prompt_verificacao_hero(produto, len(referencias)))
+
+    resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=partes)
+    texto = (resposta.text or "").strip()
+    linhas = texto.splitlines()
+    passou = bool(linhas) and linhas[0].strip().upper().startswith("SIM")
+    motivo = linhas[1].strip() if len(linhas) > 1 else ""
+    return passou, motivo
+
+
+def gerar_foto_hero_com_verificacao(
+    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Gera a foto principal do produto (edicao com foto(s) real(is), ou
+    fallback por texto se nao houver nenhuma referencia) e confere
+    automaticamente se o resultado retrata o produto certo
+    (verificar_foto_hero), tentando de novo com o motivo da reprovacao
+    ate max_tentativas vezes.
+
+    Retorna o caminho da imagem aprovada, ou None se reprovar em todas as
+    tentativas -- nesse caso o chamador deve pular esse produto, NAO
+    publicar a imagem reprovada.
+
+    Produtos sem nenhuma foto real de referencia (fallback por texto) nao
+    tem como ter fidelidade verificada -- sao aceitos sem checagem (hoje
+    nenhum produto do catalogo cai nesse caso).
+    """
+    nome_arquivo = nome_arquivo or produto["id"]
+    referencias = [
+        c for c in (produto.get("imagem_ambiente"), produto.get("imagem_estampa")) if c
+    ]
+
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando foto hero de {produto['id']}...")
+
+        if referencias:
+            prompt = montar_prompt_edicao(produto)
+            if correcao:
+                prompt += (
+                    f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                    f"{correcao}. Corrija isso especificamente."
+                )
+            caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
+        else:
+            prompt = montar_prompt_texto(produto, MARCA)
+            client = _obter_cliente()
+            resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=prompt)
+            caminho_atual = None
+            for i, parte in enumerate(resposta.candidates[0].content.parts):
+                if parte.inline_data is not None:
+                    caminho_atual = str(PASTA_SAIDA / f"{nome}_{i}.png")
+                    with open(caminho_atual, "wb") as f:
+                        f.write(parte.inline_data.data)
+                    break
+            return caminho_atual  # sem referencia real, nao da pra verificar fidelidade
+
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: '{produto['id']}' nao passou na verificacao apos "
+        f"{max_tentativas} tentativas -- pulando este produto"
+    )
+    return None
 
 
 def _part_de_bytes(dados: bytes, mime_type: str):

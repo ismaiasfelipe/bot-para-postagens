@@ -372,17 +372,122 @@ externo de que a URL responde 200 com o conteúdo certo.
 
 ## Próximo passo imediato (atualizado 03/09/2026)
 Falta, em ordem de dependência:
-1. Agendador (cron) rodando o pipeline semanalmente, cruzando com o
-   calendário de campanhas (23 campanhas já documentadas no Drive) --
-   agora que geração + montagem + upload + publicação real no Instagram
-   já estão todas validadas ponta a ponta.
-2. Renovação do token de acesso do Instagram antes de expirar (~60 dias
+1. Usuário fazer `git push` dos arquivos novos desta sessão (eu não
+   consigo -- bloqueado pelo classificador do Claude Code): `tema_semana.py`,
+   `_definir_tema.py`, `.github/workflows/*.yml`, `assets/fonts/*`,
+   `cache_hero/*`, mudanças em `montar_post.py`/`montar_carrossel_campanha.py`/
+   `executar_pipeline_semanal.py`/`gerar_carrossel_gemini.py`.
+2. Testar os dois workflows manualmente no GitHub (aba Actions → "Run
+   workflow") antes de confiar no agendamento automático: primeiro
+   "Definir tema da semana", depois "Pipeline diario Instagram".
+3. A partir de 11/09/2026 o pipeline diário passa a publicar de verdade
+   sozinho (seg-sáb, 7h) -- usar essa semana pra definir o tema inicial
+   e conferir os primeiros posts de perto.
+4. Renovação do token de acesso do Instagram antes de expirar (~60 dias
    a partir de 03/09/2026, ou seja, por volta de 02/11/2026) -- rodar de
    novo o refresh via `publicar_instagram.py` e atualizar IG_ACCESS_TOKEN
-   no `.env`. Vale automatizar isso dentro do próprio agendador.
-3. Conforme o usuário for subindo mais PNGs de "produto no ambiente" no
+   no `.env` (local) + fazer push. Vale automatizar isso no futuro.
+5. Conforme o usuário for subindo mais PNGs de "produto no ambiente" no
    Drive, rodar conectar_drive.py de novo pra ampliar a cobertura além
-   dos 10 produtos atuais (hoje só "cama (quarto)" tem fotos completas).
+   dos 10 produtos atuais (hoje só "cama (quarto)" tem fotos completas)
+   -- também melhora a taxa de aprovação do verificador de foto hero.
+
+## Calendário de campanhas + orquestrador semanal (03/09/2026)
+`calendario_campanhas.py` -- copia local das orientações reais das 23
+campanhas (puxadas do Drive), com cálculo automático de data (dia fixo,
+segundo domingo, última sexta, ou intervalo cruzando o ano). Função
+`campanhas_ativas_na_semana()` decide a campanha da semana (prioriza data
+fixa sobre intervalo sazonal).
+
+`executar_pipeline_semanal.py` -- orquestrador que junta tudo: escolhe
+campanha → escolhe produto (por categoria + histórico, evita repetir os
+últimos 8 posts) → gera/reaproveita a foto → monta o carrossel → escreve
+a legenda → (com `--publicar`) sobe pro storage e publica de verdade.
+Testado em preview com a campanha "Dia 9 do 9" + tapete médio, funcionou
+ponta a ponta. **Escopo atual: só os 5 formatos que usam 1 foto hero**
+(vitrine, campanha_sazonal, promocao_relampago, novidade_semana,
+detalhe_textura) -- os outros 5 formatos exigem múltiplas fotos/produtos
+e ainda pedem curadoria manual.
+
+## Verificação automática de foto hero (03/09/2026) -- bug real encontrado
+Descoberto que produtos SEM `imagem_ambiente` (só `imagem_estampa`) às
+vezes geravam cenas completamente genéricas e desconectadas do produto
+real (ex: p002 "tapete médio" saiu com foto de quarto/cama; confirmado
+também em p001, p003, p004 -- todos os arquivos antigos em `saida/`
+gerados na sessão de 04-05/08, antes desse fix). Causa: sem uma foto de
+ambiente pra ancorar a cena, o Gemini "inventa" uma composição de
+decoração genérica em vez de respeitar a referência de tecido.
+
+Corrigido com `verificar_foto_hero()` + `gerar_foto_hero_com_verificacao()`
+em `gerar_carrossel_gemini.py` (mesmo padrão do "juiz" já usado em
+`verificar_troca_estampa`, generalizado pra foto principal): gera, pede
+pro Gemini conferir se a foto bate com a categoria/padrão real, e se
+reprovar, tenta de novo com o motivo (até 3x). Se reprovar em todas as
+tentativas, retorna `None` -- o chamador (`executar_pipeline_semanal.py`)
+pula esse produto e tenta o próximo candidato, NUNCA publica uma foto
+reprovada.
+
+Fotos aprovadas ficam em cache separado `cache_hero/{produto_id}.png`
+(não reaproveita os arquivos antigos de `saida/`, que não passaram por
+verificação). p001, p002, p003, p004 já foram regeradas e aprovadas
+nesse cache -- confirmado visualmente por comparação com a foto real de
+referência, bateram fielmente (mesma toalha/tapete, mesmo padrão/cor).
+
+## Automação online via GitHub Actions (03/09/2026) -- substitui Task Scheduler
+Decisão: em vez de Windows Task Scheduler (exigiria o PC ligado/logado
+todo dia às 7h), o pipeline roda 100% na nuvem via GitHub Actions, no
+próprio repositório (que já tem `.env`/`credenciais_drive.json`
+commitados, então não precisou nem configurar GitHub Secrets).
+
+Modelo de uso: o usuário define o "tema da semana" 1x por semana (de
+qualquer lugar, pelo site/app do GitHub) e o pipeline publica sozinho de
+segunda a sábado às 7h (10:00 UTC) seguindo esse tema, até a próxima
+atualização.
+
+- `tema_semana.py` -- le/escreve `tema_semana.json` (campanha_chave,
+  categoria_foco, produto_id -- todos opcionais). `executar_pipeline_semanal.py`
+  agora prioriza esse tema sobre a campanha automática do calendário.
+- `.github/workflows/definir_tema.yml` -- workflow com `workflow_dispatch`
+  e inputs (dropdown de campanha, categoria, produto). Acionar em
+  github.com/ismaiasfelipe/bot-para-postagens → aba "Actions" → "Definir
+  tema da semana" → "Run workflow" (funciona pelo navegador do celular
+  também, sem precisar do PC).
+- `.github/workflows/pipeline_diario.yml` -- roda via `cron: "0 10 * * 1-6"`
+  (seg-sáb, 7h BRT). Só publica de verdade a partir de **11/09/2026**
+  (guard de data no primeiro step) -- dá tempo do usuário atualizar o
+  catálogo de produtos antes. Reinstala dependências, roda
+  `executar_pipeline_semanal.py --publicar`, e commita de volta
+  `historico_publicacoes.json` + `cache_hero/` + `saida/` pra manter
+  continuidade entre execuções (cada run começa com checkout limpo do
+  repo).
+
+**Pendente do lado do usuário**: fazer push desses arquivos pro GitHub
+(eu não consigo rodar `git push` diretamente -- bloqueado pelo
+classificador de permissão do Claude Code), e testar 1x cada workflow
+manualmente (via "Run workflow") antes do agendamento automático
+começar valer.
+
+## Fontes portáveis (03/09/2026) -- bug real encontrado
+`montar_post.py` e `montar_carrossel_campanha.py` usavam fontes do
+Windows (`C:\Windows\Fonts\segoeuib.ttf`, `LHANDW.TTF` -- Lucida
+Handwriting), que não existem no Linux (onde o GitHub Actions roda) --
+o pipeline quebraria completamente ao rodar na nuvem. Corrigido:
+- Baixadas fontes open-source (licença OFL) pra `assets/fonts/`: **Open
+  Sans** (variable, substitui Segoe UI Bold/Regular/Italic) e **Dancing
+  Script** (variable, substitui Lucida Handwriting -- aliás combina
+  melhor com o conceito "traço fluido/caligráfico" da marca).
+- `_carregar_fonte()` (nova, duplicada nos dois arquivos) carrega a
+  fonte variável e ajusta o peso certo via eixo `wght`
+  (`set_variation_by_name`), substituindo toda chamada direta de
+  `ImageFont.truetype`.
+- Testado ponta a ponta: pipeline gerando carrossel com as fontes novas
+  funciona igual, visualmente conferido.
+- **Bug secundário encontrado e corrigido nesse teste**: o formato
+  `promocao_relampago` estava recebendo a frase inteira do CTA da
+  campanha como "condição" (título grande do slide 3), estourando o
+  slide com texto demais. Agora usa um texto curto fixo ("Condição
+  especial, só hoje!") -- o CTA completo já aparece por inteiro no
+  slide 4.
 
 ## Repositório GitHub (criado 03/09/2026)
 Projeto agora também vive em `github.com/ismaiasfelipe/bot-para-postagens`
