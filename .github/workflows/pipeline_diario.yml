@@ -1,0 +1,52 @@
+name: Pipeline diario Instagram
+
+# Roda de segunda a sabado, 7h no horario de Elói Mendes/MG (America/Sao_Paulo,
+# UTC-3 o ano todo -- Brasil nao usa mais horario de verao). 10:00 UTC = 7:00 BRT.
+# So comeca a publicar de verdade a partir de 11/09/2026 (ver o passo
+# "Checar data de inicio" abaixo) -- antes disso, roda mas nao faz nada.
+on:
+  schedule:
+    - cron: "0 10 * * 1-6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checar data de inicio
+        id: checar_data
+        run: |
+          hoje=$(date -u +%Y-%m-%d)
+          if [[ "$hoje" < "2026-09-11" ]]; then
+            echo "Ainda nao chegou a data de inicio (11/09/2026). Pulando."
+            echo "prosseguir=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "prosseguir=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.checar_data.outputs.prosseguir == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        if: steps.checar_data.outputs.prosseguir == 'true'
+        run: pip install python-dotenv requests google-genai google-cloud-storage Pillow
+
+      - name: Rodar pipeline (publica de verdade)
+        if: steps.checar_data.outputs.prosseguir == 'true'
+        run: python executar_pipeline_semanal.py --publicar
+
+      - name: Salvar historico e cache de fotos atualizados
+        if: steps.checar_data.outputs.prosseguir == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add historico_publicacoes.json cache_hero/ saida/
+          git diff --cached --quiet && echo "nada mudou" || git commit -m "Atualiza historico de publicacoes [skip ci]"
+          git push

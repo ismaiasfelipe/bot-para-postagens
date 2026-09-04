@@ -36,9 +36,26 @@ PASTA_ASSETS = Path("assets")
 LOGO_PADRAO = PASTA_ASSETS / "logo_badge.png"
 LOGO_ICONE = PASTA_ASSETS / "logo_icone.png"
 
-PASTA_FONTES = Path(r"C:\Windows\Fonts")
-FONTE_TITULO = PASTA_FONTES / "segoeuib.ttf"  # Segoe UI Bold
-FONTE_SUBTITULO = PASTA_FONTES / "segoeuii.ttf"  # Segoe UI Italic
+PASTA_FONTES = PASTA_ASSETS / "fonts"
+FONTE_TITULO = PASTA_FONTES / "OpenSans.ttf"  # variable, eixo wght -> Bold
+FONTE_SUBTITULO = PASTA_FONTES / "OpenSans-Italic.ttf"  # variable, eixo wght -> Regular
+
+
+def _carregar_fonte(caminho: Path, tamanho: int, peso: str = "Bold") -> ImageFont.FreeTypeFont:
+    """
+    Carrega uma fonte variavel (Open Sans, licenca OFL, embutida em
+    assets/fonts/) e ajusta o peso via eixo wght -- troca a antiga
+    dependencia de Segoe UI do Windows, que nao existe no Linux (onde o
+    GitHub Actions roda). Fontes fixas (nao-variaveis) ignoram 'peso'.
+    """
+    fonte = ImageFont.truetype(str(caminho), tamanho)
+    try:
+        nomes = {n.decode() if isinstance(n, bytes) else n for n in fonte.get_variation_names()}
+        if peso in nomes:
+            fonte.set_variation_by_name(peso)
+    except OSError:
+        pass  # fonte nao e variavel, usa como esta
+    return fonte
 
 
 def _hex_para_rgb(cor_hex: str) -> tuple[int, int, int]:
@@ -194,7 +211,7 @@ def montar_post(
 
     # --- etiqueta com o nome do produto (sobre o canto da foto) ---
     if nome_produto:
-        fonte_etiqueta = ImageFont.truetype(str(FONTE_TITULO), 26)
+        fonte_etiqueta = _carregar_fonte(FONTE_TITULO, 26, "Bold")
         texto_etiqueta = nome_produto.strip()
         pad_x, pad_y = 22, 12
         largura_etiqueta = draw.textlength(texto_etiqueta, font=fonte_etiqueta) + pad_x * 2
@@ -217,7 +234,7 @@ def montar_post(
     x_texto = x_foto + lado_foto + 40  # margem de sobra, nunca encosta na foto
     largura_texto = LARGURA - x_texto - 50
 
-    fonte_titulo = ImageFont.truetype(str(FONTE_TITULO), 62)
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 62, "Bold")
     linhas_titulo = _quebrar_linhas(titulo.upper(), fonte_titulo, largura_texto, draw)
 
     y = 300  # comeca logo abaixo do badge do logo
@@ -227,7 +244,7 @@ def montar_post(
 
     # --- subtitulo (italico, tom mais claro) ---
     y += 20
-    fonte_subtitulo = ImageFont.truetype(str(FONTE_SUBTITULO), 28)
+    fonte_subtitulo = _carregar_fonte(FONTE_SUBTITULO, 28, "Italic")
     linhas_subtitulo = _quebrar_linhas(subtitulo.upper(), fonte_subtitulo, largura_texto, draw)
     for linha in linhas_subtitulo:
         draw.text((x_texto, y), linha, font=fonte_subtitulo, fill=_hex_para_rgb(ROSA_QUARTZO))
