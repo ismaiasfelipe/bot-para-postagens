@@ -1,0 +1,285 @@
+:root {
+  --roxo-nobre: #582C4D;
+  --rosa-quartzo: #C48B9F;
+  --off-white: #FAF9F6;
+  --cinza-texto: #5a5258;
+  --vermelho: #b3413b;
+  --verde: #3a7a4e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--off-white);
+  color: var(--roxo-nobre);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { color: var(--roxo-nobre); margin: 0 0 8px; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; margin-top: 24px; }
+
+.tela { display: none; min-height: 100vh; }
+.tela.ativo { display: block; }
+
+/* --- Tela de setup --- */
+
+#tela-setup {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+#tela-setup.ativo { display: flex; }
+
+.setup-caixa {
+  max-width: 420px;
+  width: 100%;
+  margin: 40px auto;
+}
+
+.setup-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  display: block;
+  margin: 0 auto 12px;
+}
+
+.setup-caixa h1 { text-align: center; }
+
+.setup-intro {
+  color: var(--cinza-texto);
+  font-size: 0.92rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.setup-ajuda {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: var(--cinza-texto);
+}
+.setup-ajuda summary { cursor: pointer; color: var(--roxo-nobre); font-weight: 600; }
+.setup-ajuda ol { padding-left: 20px; }
+
+/* --- Formulários --- */
+
+form { display: flex; flex-direction: column; gap: 6px; }
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--roxo-nobre);
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  padding: 11px 12px;
+  border: 1.5px solid #e4dde0;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #fff;
+  color: var(--roxo-nobre);
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--rosa-quartzo);
+}
+
+.botao-principal {
+  margin-top: 18px;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--roxo-nobre);
+  color: var(--off-white);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.botao-principal:active { opacity: 0.85; }
+
+.botao-secundario {
+  margin-top: 8px;
+  padding: 11px;
+  border: 1.5px solid var(--roxo-nobre);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--roxo-nobre);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.botao-perigo {
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--vermelho);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.botao-icone {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.status { font-size: 0.88rem; margin-top: 10px; min-height: 1.2em; }
+.status.erro { color: var(--vermelho); }
+.status.sucesso { color: var(--verde); }
+
+.separador { border: none; border-top: 1px solid #e4dde0; margin: 28px 0 8px; }
+
+/* --- App principal --- */
+
+#app-principal { display: none; flex-direction: column; min-height: 100vh; }
+#app-principal.ativo { display: flex; }
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px calc(16px + env(safe-area-inset-top, 0px));
+  background: var(--roxo-nobre);
+  color: var(--off-white);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topo-titulo { font-weight: 700; font-size: 1.1rem; }
+
+.conteudo {
+  flex: 1;
+  padding: 16px 16px 90px;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.aba-conteudo { display: none; }
+.aba-conteudo.ativo { display: block; }
+
+.aba-intro { color: var(--cinza-texto); font-size: 0.9rem; margin: 0 0 14px; }
+
+.aba-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #e4dde0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 10;
+}
+
+.aba-botao {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #9b8e95;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.aba-botao.ativo { color: var(--roxo-nobre); font-weight: 700; }
+.aba-icone { font-size: 1.25rem; }
+
+/* --- Chat --- */
+
+.chat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 200px;
+  max-height: 55vh;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.chat-msg {
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  max-width: 85%;
+  line-height: 1.35;
+}
+.chat-msg-usuario {
+  align-self: flex-end;
+  background: var(--roxo-nobre);
+  color: var(--off-white);
+  border-bottom-right-radius: 4px;
+}
+.chat-msg-bot {
+  align-self: flex-start;
+  background: #f0e9ec;
+  color: var(--roxo-nobre);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-form { flex-direction: row; gap: 8px; }
+.chat-form input { flex: 1; margin-top: 0; }
+.chat-form button { margin-top: 0; padding: 11px 18px; white-space: nowrap; }
+
+/* --- Relatório --- */
+
+.carregando, .vazio { color: var(--cinza-texto); font-size: 0.92rem; }
+
+.resumo-cards {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.card-stat {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid #e4dde0;
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+.card-stat-numero {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--roxo-nobre);
+}
+.card-stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cinza-texto);
+  margin-top: 2px;
+}
+
+.lista-historico { display: flex; flex-direction: column; gap: 10px; }
+
+.item-historico {
+  background: #fff;
+  border: 1.5px solid #e4dde0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.item-historico-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.95rem;
+}
+.item-historico-data { color: var(--cinza-texto); font-size: 0.8rem; }
+.item-historico-detalhe { color: var(--rosa-quartzo); font-weight: 600; font-size: 0.85rem; margin-top: 2px; }
+.item-historico-rodape { color: var(--cinza-texto); font-size: 0.78rem; margin-top: 4px; }

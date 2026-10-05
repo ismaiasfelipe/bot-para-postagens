@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>IL Variedades — Painel</title>
+  <meta name="description" content="Painel de controle do bot de postagens do Instagram da IL Variedades — Enxovais &amp; Lar." />
+  <meta name="theme-color" content="#582C4D" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Tela de configuração (primeiro acesso, ou via botão de engrenagem) -->
+  <section id="tela-setup" class="tela ativo">
+    <div class="setup-caixa">
+      <img src="icons/icon-192.png" alt="" class="setup-logo" />
+      <h1>IL Variedades</h1>
+      <p class="setup-intro">
+        Esse app controla o bot de postagens direto pelo GitHub Actions —
+        sem servidor próprio. Precisa de um token de acesso pessoal do
+        GitHub, restrito a este repositório.
+      </p>
+
+      <form id="form-setup">
+        <label for="input-token">Token do GitHub (Personal Access Token)</label>
+        <input type="password" id="input-token" autocomplete="off" placeholder="ghp_..." required />
+
+        <label for="input-owner">Dono do repositório</label>
+        <input type="text" id="input-owner" placeholder="ismaiasfelipe" required />
+
+        <label for="input-repo">Nome do repositório</label>
+        <input type="text" id="input-repo" placeholder="bot-para-postagens" required />
+
+        <label for="input-branch">Branch</label>
+        <input type="text" id="input-branch" placeholder="main" value="main" />
+
+        <button type="submit" class="botao-principal">Conectar</button>
+        <button type="button" id="btn-voltar-setup" class="botao-secundario" style="display:none">Voltar</button>
+      </form>
+      <p id="setup-status" class="status"></p>
+
+      <details class="setup-ajuda">
+        <summary>Como criar o token?</summary>
+        <ol>
+          <li>No GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
+          <li>Repository access: "Only select repositories" → escolha este repositório.</li>
+          <li>Permissions → Repository permissions: "Actions" = Read and write, "Contents" = Read-only.</li>
+          <li>Gere e cole o token acima. Ele fica salvo só neste navegador.</li>
+        </ol>
+      </details>
+    </div>
+  </section>
+
+  <!-- App principal -->
+  <section id="app-principal" class="tela">
+    <header class="topo">
+      <span class="topo-titulo">IL Variedades</span>
+      <button id="btn-config" class="botao-icone" aria-label="Configurações" title="Configurações">⚙️</button>
+    </header>
+
+    <main class="conteudo">
+
+      <section id="aba-postagens" class="aba-conteudo ativo">
+        <h2>Definir postagens</h2>
+        <p class="aba-intro">
+          Escolha o tema da semana (o mesmo que o workflow "Definir tema da
+          semana" no GitHub) — o pipeline diário (seg-sáb, 7h) vai usar essa
+          escolha a partir da próxima publicação.
+        </p>
+
+        <form id="form-definir-postagens">
+          <label for="select-campanha">Campanha</label>
+          <select id="select-campanha">
+            <option value="">Automático (pelo calendário)</option>
+          </select>
+
+          <label for="select-categoria">Categoria em foco (opcional, sem campanha específica)</label>
+          <select id="select-categoria">
+            <option value="">—</option>
+          </select>
+
+          <label for="input-produto">Forçar 1 produto específico (ID, opcional)</label>
+          <input type="text" id="input-produto" placeholder="ex: p009" />
+
+          <button type="submit" class="botao-principal">Salvar tema da semana</button>
+        </form>
+        <p id="definir-status" class="status"></p>
+
+        <hr class="separador" />
+
+        <h3>Publicar agora</h3>
+        <p class="aba-intro">Dispara o pipeline imediatamente, fora do horário programado.</p>
+        <button id="btn-publicar-agora" class="botao-perigo">Publicar agora</button>
+      </section>
+
+      <section id="aba-chat" class="aba-conteudo">
+        <h2>Chat</h2>
+        <div id="chat-mensagens" class="chat-lista"></div>
+        <form id="form-chat" class="chat-form">
+          <input type="text" id="input-chat" placeholder="Escreva uma mensagem..." autocomplete="off" />
+          <button type="submit" class="botao-principal">Enviar</button>
+        </form>
+      </section>
+
+      <section id="aba-relatorio" class="aba-conteudo">
+        <h2>Relatório</h2>
+        <div id="relatorio-conteudo">
+          <p class="carregando">Abra esta aba pra carregar o histórico.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="aba-nav">
+      <button class="aba-botao ativo" data-aba="postagens">
+        <span class="aba-icone">🗓️</span>
+        <span>Postagens</span>
+      </button>
+      <button class="aba-botao" data-aba="chat">
+        <span class="aba-icone">💬</span>
+        <span>Chat</span>
+      </button>
+      <button class="aba-botao" data-aba="relatorio">
+        <span class="aba-icone">📊</span>
+        <span>Relatório</span>
+      </button>
+    </nav>
+  </section>
+
+  <script src="js/campanhas.js"></script>
+  <script src="js/github-api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
