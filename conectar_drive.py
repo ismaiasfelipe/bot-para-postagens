@@ -14,7 +14,11 @@ produtos/                                  <- pasta raiz do catalogo
     lençol casal 4 pçs/
       estampas/            -> fotos cruas do tecido/produto
       produto no ambiente/ -> fotos do produto em cena/decoracao
-      fotos variadas/      -> outras fotos soltas
+      fotos variadas/      -> fotos soltas do produto disperso/empilhado/
+                               dobrado (baixadas TODAS, nao so a 1a --
+                               servem de referencia de composicao real
+                               pra gerar_composicao_dispersa_com_verificacao,
+                               ver gerar_carrossel_gemini.py)
       descrição/           -> Google Doc com ficha tecnica
     colcha preguiada sarja casal-box/
     ... (outros produtos da categoria)
@@ -154,12 +158,19 @@ def montar_banco_de_produtos() -> dict:
                 PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_estampa"
             )
 
+            # fotos_variadas: TODAS as fotos da subpasta (nao so 1) -- cada
+            # uma costuma mostrar o produto disperso/empilhado/dobrado numa
+            # composicao real diferente, usadas como referencia de
+            # composicao na geracao (ver montar_prompt_composicao_dispersa).
+            fotos_variadas = _baixar_todas_imagens(
+                servico, subpastas.get("fotos variadas"),
+                PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_variada"
+            )
+
             if not caminho_ambiente and not caminho_estampa:
-                # tenta "fotos variadas" soltas como ultimo recurso
-                caminho_estampa = _baixar_primeira_imagem(
-                    servico, subpastas.get("fotos variadas"),
-                    PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_variada"
-                )
+                # sem estampas/ambiente: usa a 1a de "fotos variadas" como
+                # ultimo recurso pra imagem_estampa tambem
+                caminho_estampa = fotos_variadas[0] if fotos_variadas else None
 
             if not caminho_ambiente and not caminho_estampa:
                 print(f"  [!] {nome_produto}: sem foto ainda, pulando")
@@ -179,10 +190,12 @@ def montar_banco_de_produtos() -> dict:
                 "descricao_tecnica": descricao_texto.strip(),
                 "imagem_ambiente": caminho_ambiente,
                 "imagem_estampa": caminho_estampa,
+                "fotos_variadas": fotos_variadas,
             })
             print(f"  [ok] {nome_produto}"
                   f" (ambiente={'sim' if caminho_ambiente else 'nao'},"
-                  f" estampa={'sim' if caminho_estampa else 'nao'})")
+                  f" estampa={'sim' if caminho_estampa else 'nao'},"
+                  f" variadas={len(fotos_variadas)})")
             contador += 1
 
     return {"produtos": produtos}
@@ -200,6 +213,25 @@ def _baixar_primeira_imagem(servico, id_subpasta, caminho_base: Path) -> str | N
     caminho_local = caminho_base.with_suffix(extensao)
     baixar_arquivo(servico, imagem["id"], str(caminho_local))
     return str(caminho_local)
+
+
+def _baixar_todas_imagens(servico, id_subpasta, caminho_base: Path) -> list[str]:
+    """
+    Baixa TODAS as imagens da subpasta (nao so a primeira) -- usado pra
+    "fotos variadas", onde cada foto costuma mostrar o produto disperso/
+    empilhado/dobrado numa composicao diferente, e essas composicoes reais
+    servem de referencia pro Gemini (ver montar_prompt_composicao_dispersa
+    em gerar_carrossel_gemini.py) em vez de inventar o arranjo do zero.
+    """
+    if not id_subpasta:
+        return []
+    caminhos = []
+    for indice, imagem in enumerate(listar_imagens(servico, id_subpasta)):
+        extensao = Path(imagem["name"]).suffix or ".jpg"
+        caminho_local = caminho_base.with_name(f"{caminho_base.name}_{indice}").with_suffix(extensao)
+        baixar_arquivo(servico, imagem["id"], str(caminho_local))
+        caminhos.append(str(caminho_local))
+    return caminhos
 
 
 if __name__ == "__main__":

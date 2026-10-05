@@ -318,7 +318,7 @@ def rodar(publicar: bool = False) -> None:
     stories = montar_stories_do_post(pasta_saida, foto_hero, produto, campanha, historico)
     print(f"Stories montados: {stories}")
 
-    legenda = montar_legenda(campanha, produto["nome"])
+    legenda = montar_legenda(campanha, produto)
     print(f"\nLegenda:\n{legenda}\n")
 
     if not publicar:
