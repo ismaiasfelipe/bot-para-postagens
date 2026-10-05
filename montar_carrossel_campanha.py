@@ -509,6 +509,109 @@ def montar_slide_hero(
     print(f"slide 1 (hero) salvo em {caminho_saida}")
 
 
+def _fundo_diagonal(largura: int, altura: int, cor_clara: str, cor_escura: str) -> Image.Image:
+    """
+    Fundo off-white com dois triangulos na cor escura cortando os cantos
+    opostos (superior-esquerdo e inferior-direito) na diagonal -- motivo
+    decorativo usado nos wireframes de referencia (exemplo de carrosseis).
+    """
+    tela = Image.new("RGB", (largura, altura), _hex_para_rgb(cor_clara))
+    draw = ImageDraw.Draw(tela)
+    fx, fy = int(largura * 0.42), int(altura * 0.58)
+    draw.polygon([(0, 0), (fx, 0), (0, fy)], fill=_hex_para_rgb(cor_escura))
+    draw.polygon(
+        [(largura, altura), (largura - fx, altura), (largura, altura - fy)],
+        fill=_hex_para_rgb(cor_escura),
+    )
+    return tela
+
+
+def montar_slide_duas_fotos_sobrepostas(
+    foto_tras: str,
+    foto_frente: str,
+    titulo: str,
+    legenda: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Duas fotos quadradas sobrepostas na diagonal (uma no canto superior
+    esquerdo, outra avancando por cima no canto inferior direito), titulo
+    solto no topo e legenda solta na base -- sem caixa, so o texto. Fundo
+    solido roxo nobre (reaproveita o padrao de fundo escuro ja usado em
+    montar_slide_variedade).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(ROXO_NOBRE))
+    draw = ImageDraw.Draw(tela)
+
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 42, "Bold")
+    draw.text((60, 50), titulo, font=fonte_titulo, fill=_hex_para_rgb(OFF_WHITE))
+
+    lado = 490
+    foto1 = _cobrir_quadrado(Image.open(foto_tras), lado)
+    foto2 = _cobrir_quadrado(Image.open(foto_frente), lado)
+
+    pos1 = (60, 170)
+    pos2 = (LARGURA - lado - 60, ALTURA - lado - 150)
+
+    mascara = Image.new("L", (lado, lado), 0)
+    ImageDraw.Draw(mascara).rounded_rectangle((0, 0, lado, lado), radius=8, fill=255)
+    tela.paste(foto1, pos1, mascara)
+    tela.paste(foto2, pos2, mascara)
+
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 32, "Bold")
+    draw.text((60, ALTURA - 90), legenda, font=fonte_legenda, fill=_hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"slide (duas fotos sobrepostas) salvo em {caminho_saida}")
+
+
+def montar_slide_duas_fotos_circulares(
+    foto_esq: str,
+    foto_dir: str,
+    legenda_esq: str,
+    legenda_dir: str,
+    titulo: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Duas fotos circulares lado a lado, cada uma com sua propria legenda
+    (caixa escura arredondada), sobre fundo diagonal (triangulos roxo
+    nobre nos cantos opostos) -- usado pra comparar/combinar 2 produtos
+    quando cada um precisa de legenda independente (diferente de
+    montar_slide_duas_fotos, que usa 1 titulo so pros dois).
+    """
+    tela = _fundo_diagonal(LARGURA, ALTURA, OFF_WHITE, ROXO_NOBRE)
+    draw = ImageDraw.Draw(tela)
+
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    draw.text((50, 50), titulo, font=fonte_titulo, fill=_hex_para_rgb(OFF_WHITE))
+
+    raio_esq, raio_dir = 230, 190
+    centro_esq = (330, 560)
+    centro_dir = (720, 460)
+
+    for (cx, cy), raio, caminho_foto, legenda in (
+        (centro_esq, raio_esq, foto_esq, legenda_esq),
+        (centro_dir, raio_dir, foto_dir, legenda_dir),
+    ):
+        foto = _cobrir_quadrado(Image.open(caminho_foto), raio * 2)
+        mascara_circulo = Image.new("L", (raio * 2, raio * 2), 0)
+        ImageDraw.Draw(mascara_circulo).ellipse((0, 0, raio * 2, raio * 2), fill=255)
+        tela.paste(foto, (cx - raio, cy - raio), mascara_circulo)
+        draw.ellipse((cx - raio, cy - raio, cx + raio, cy + raio), outline=_hex_para_rgb(ROXO_NOBRE), width=3)
+
+        fonte_legenda = _carregar_fonte(FONTE_TITULO, 28, "Bold")
+        pad_x, pad_y = 22, 12
+        largura_l = draw.textlength(legenda, font=fonte_legenda) + pad_x * 2
+        x_l = cx - int(largura_l / 2)
+        y_l = cy + raio - 30
+        draw.rounded_rectangle((x_l, y_l, x_l + largura_l, y_l + 30 + pad_y * 2), radius=20, fill=_hex_para_rgb(ROXO_NOBRE))
+        draw.text((x_l + pad_x, y_l + pad_y - 2), legenda, font=fonte_legenda, fill=_hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"slide (duas fotos circulares) salvo em {caminho_saida}")
+
+
 if __name__ == "__main__":
     foto_principal = "saida/teste_pipeline_p009_0.png"
 
