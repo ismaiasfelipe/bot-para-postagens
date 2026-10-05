@@ -28,6 +28,7 @@ pip install Pillow --break-system-packages
 python montar_carrossel_campanha.py
 """
 
+import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -610,6 +611,223 @@ def montar_slide_duas_fotos_circulares(
 
     tela.save(caminho_saida)
     print(f"slide (duas fotos circulares) salvo em {caminho_saida}")
+
+
+def _forma_blob(largura: int, altura: int, cx: int, cy: int, raio_base: int, irregularidade: float = 0.14, pontas: int = 12, seed: float = 0) -> Image.Image:
+    """
+    Mascara de 'blob' organico (circulo irregular, bordas em lobulos) --
+    motivo decorativo visto nos wireframes (circulo grande com rodape em
+    nuvem, rodape em blob escuro). Os wireframes originais sao desenhados
+    a mao no Canva, entao aqui o blob e reconstruido como um poligono com
+    raio variavel ao redor do centro (soma de duas senoides de frequencia
+    diferente) suavizado com blur -- reproduz a TECNICA do formato
+    organico, nao um traco pixel a pixel do Canva.
+    """
+    pontos = []
+    for i in range(pontas):
+        ang = 2 * math.pi * i / pontas
+        fator = 1 + irregularidade * math.sin(ang * 3 + seed) + irregularidade * 0.5 * math.sin(ang * 5 - seed)
+        r = raio_base * fator
+        pontos.append((cx + r * math.cos(ang), cy + r * math.sin(ang)))
+    mask = Image.new("L", (largura, altura), 0)
+    ImageDraw.Draw(mask).polygon(pontos, fill=255)
+    return mask.filter(ImageFilter.GaussianBlur(raio_base * 0.04))
+
+
+def montar_slide_circulo_organico(
+    foto_produto: str,
+    legenda: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Foto grande recortada num circulo organico (bordas levemente
+    irregulares, nao um circulo matematico perfeito) com um rodape em
+    forma de blob escuro sobrepondo a base do circulo, contendo a
+    legenda. Baseado no wireframe real (exemplo de carrosseis - ex8/slide1).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+
+    cx, cy, raio = LARGURA // 2, 460, 420
+    mascara_circulo = _forma_blob(LARGURA, ALTURA, cx, cy, raio, irregularidade=0.03, pontas=16, seed=1)
+    foto = _cobrir_quadrado(Image.open(foto_produto), raio * 2)
+    foto_rgba = Image.new("RGBA", (LARGURA, ALTURA), (0, 0, 0, 0))
+    foto_rgba.paste(foto, (cx - raio, cy - raio))
+    tela.paste(foto_rgba, (0, 0), mascara_circulo)
+
+    mascara_rodape = _forma_blob(LARGURA, ALTURA, cx, cy + raio - 60, int(raio * 0.62), irregularidade=0.16, pontas=24, seed=5)
+    rodape = Image.new("RGBA", (LARGURA, ALTURA), _hex_para_rgb(ROXO_NOBRE) + (255,))
+    tela.paste(rodape, (0, 0), mascara_rodape)
+
+    draw = ImageDraw.Draw(tela)
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    _texto_centralizado(draw, cx, cy + raio - 70, legenda, fonte_legenda, _hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"slide (circulo organico) salvo em {caminho_saida}")
+
+
+def _moldura_polaroid(imagem: Image.Image, lado_foto: int, borda: int = 14, borda_base: int = 54) -> Image.Image:
+    """
+    Aplica uma moldura estilo polaroid (fundo off-white, borda fina nos
+    3 lados e borda grossa na base, onde entra a legenda) em volta de
+    uma foto quadrada -- motivo das polaroids empilhadas/inclinadas dos
+    wireframes (exemplo de carrosseis - ex9).
+    """
+    foto = _cobrir_quadrado(imagem, lado_foto)
+    largura_moldura = lado_foto + borda * 2
+    altura_moldura = lado_foto + borda + borda_base
+    moldura = Image.new("RGB", (largura_moldura, altura_moldura), _hex_para_rgb(OFF_WHITE))
+    moldura.paste(foto, (borda, borda))
+    return moldura
+
+
+def _rotacionar_com_sombra(imagem: Image.Image, angulo: float) -> Image.Image:
+    """Rotaciona uma imagem RGB e devolve RGBA com sombra suave por baixo (efeito de foto solta/inclinada)."""
+    rgba = imagem.convert("RGBA")
+    girada = rgba.rotate(angulo, expand=True, fillcolor=(0, 0, 0, 0), resample=Image.BICUBIC)
+    alpha_sombra = girada.split()[-1].point(lambda a: int(a * 0.35))
+    sombra = Image.new("RGBA", girada.size, (0, 0, 0, 0))
+    sombra.putalpha(alpha_sombra)
+    sombra = sombra.filter(ImageFilter.GaussianBlur(10))
+    base = Image.new("RGBA", girada.size, (0, 0, 0, 0))
+    base.paste(sombra, (6, 10), sombra)
+    base.alpha_composite(girada)
+    return base
+
+
+def montar_slide_polaroids_cascata(
+    fotos: list[str],
+    legenda_foto: str,
+    titulo_destaque: str,
+    legenda_banner: str,
+    caminho_saida: str,
+) -> None:
+    """
+    3 polaroids levemente inclinadas em cascata vertical no canto
+    esquerdo (mesma legenda sob cada foto, como no wireframe), um
+    titulo de destaque solto no canto superior direito e um banner-seta
+    (chevron) na base direita. Baseado no wireframe real (exemplo de
+    carrosseis - ex9/slide1).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    draw = ImageDraw.Draw(tela)
+
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 26, "Bold")
+    lado_foto = 260
+    angulos = (-6, 4, -5)
+    posicoes = [(40, 10), (110, 330), (30, 650)]
+
+    for (x, y), angulo, caminho_foto in zip(posicoes, angulos, fotos[:3]):
+        polaroid = _moldura_polaroid(Image.open(caminho_foto), lado_foto)
+        draw_p = ImageDraw.Draw(polaroid)
+        _texto_centralizado(draw_p, polaroid.width // 2, lado_foto + 14, legenda_foto, fonte_legenda, _hex_para_rgb(ROXO_NOBRE))
+        girada = _rotacionar_com_sombra(polaroid, angulo)
+        tela.paste(girada, (x, y), girada)
+
+    fonte_destaque = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    draw.text((560, 420), titulo_destaque, font=fonte_destaque, fill=_hex_para_rgb(ROXO_NOBRE))
+
+    largura_seta, altura_seta = 620, 230
+    x_seta, y_seta = LARGURA - largura_seta, ALTURA - altura_seta
+    ponta = 90
+    draw.polygon(
+        [
+            (x_seta, y_seta), (x_seta + largura_seta - ponta, y_seta),
+            (x_seta + largura_seta, y_seta + altura_seta // 2),
+            (x_seta + largura_seta - ponta, y_seta + altura_seta),
+            (x_seta, y_seta + altura_seta),
+            (x_seta + ponta, y_seta + altura_seta // 2),
+        ],
+        fill=_hex_para_rgb(ROXO_NOBRE),
+    )
+    fonte_banner = _carregar_fonte(FONTE_TITULO, 34, "Bold")
+    _texto_centralizado(draw, x_seta + largura_seta // 2 + 30, y_seta + altura_seta // 2 - 18, legenda_banner, fonte_banner, _hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"slide (polaroids em cascata) salvo em {caminho_saida}")
+
+
+def _recorte_paralelogramo(imagem: Image.Image, largura: int, altura: int, deslocamento: int) -> Image.Image:
+    """
+    Recorta uma foto (cover-fit) num paralelogramo inclinado -- motivo
+    das fotos 'deitadas' na diagonal dos wireframes (exemplo de
+    carrosseis - ex10). deslocamento: quantos px o topo desliza em
+    relacao a base (positivo = inclina p/ direita).
+    """
+    foto = _cobrir_retangulo(imagem, largura + abs(deslocamento), altura)
+    mascara = Image.new("L", foto.size, 0)
+    if deslocamento >= 0:
+        pontos = [(deslocamento, 0), (deslocamento + largura, 0), (largura, altura), (0, altura)]
+    else:
+        pontos = [(0, 0), (largura, 0), (largura - deslocamento, altura), (-deslocamento, altura)]
+    ImageDraw.Draw(mascara).polygon(pontos, fill=255)
+    resultado = Image.new("RGBA", foto.size, (0, 0, 0, 0))
+    resultado.paste(foto, (0, 0), mascara)
+    return resultado
+
+
+def montar_slide_paralelogramos_sobrepostos(
+    fotos: list[str],
+    titulo: str,
+    caminho_saida: str,
+) -> None:
+    """
+    3 fotos recortadas em paralelogramos inclinados, sobrepostas em
+    cascata vertical, com o titulo solto a esquerda sobre fundo solido.
+    Baseado no wireframe real (exemplo de carrosseis - ex10/slide1).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(ROXO_NOBRE))
+    draw = ImageDraw.Draw(tela)
+
+    fonte_titulo = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    draw.text((60, 500), titulo, font=fonte_titulo, fill=_hex_para_rgb(OFF_WHITE))
+
+    dimensoes = [(330, 320), (560, 420), (330, 330)]
+    posicoes = [(450, 0), (280, 210), (370, 690)]
+    for (x, y), (largura, altura), caminho_foto in zip(posicoes, dimensoes, fotos[:3]):
+        recorte = _recorte_paralelogramo(Image.open(caminho_foto), largura, altura, deslocamento=90)
+        tela.paste(recorte, (x, y), recorte)
+
+    tela.save(caminho_saida)
+    print(f"slide (paralelogramos sobrepostos) salvo em {caminho_saida}")
+
+
+def montar_slide_grade_imagens(
+    fotos: list[str],
+    celulas_texto: dict[int, str],
+    caminho_saida: str,
+    linhas: int = 4,
+    colunas: int = 4,
+) -> None:
+    """
+    Grade cheia (padrao 4x4) de fotos quadradas flush com frestas finas
+    -- uma ou mais celulas podem virar blocos de texto solido em vez de
+    foto (celulas_texto: indice 0-based da celula, linha a linha ->
+    texto). Baseado no wireframe real (exemplo de carrosseis - ex6/slide1).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(ROXO_NOBRE))
+    draw = ImageDraw.Draw(tela)
+
+    fresta = 6
+    lado = (LARGURA - fresta * (colunas + 1)) // colunas
+    fonte_celula = _carregar_fonte(FONTE_TITULO, 30, "Bold")
+
+    indice_foto = 0
+    for linha in range(linhas):
+        for coluna in range(colunas):
+            indice = linha * colunas + coluna
+            x = fresta + coluna * (lado + fresta)
+            y = fresta + linha * (lado + fresta)
+            if indice in celulas_texto:
+                draw.rectangle((x, y, x + lado, y + lado), fill=_hex_para_rgb(ROXO_NOBRE))
+                _texto_centralizado(draw, x + lado // 2, y + lado // 2 - 14, celulas_texto[indice], fonte_celula, _hex_para_rgb(OFF_WHITE))
+            else:
+                foto = _cobrir_quadrado(Image.open(fotos[indice_foto]), lado)
+                tela.paste(foto, (x, y))
+                indice_foto += 1
+
+    tela.save(caminho_saida)
+    print(f"slide (grade de imagens) salvo em {caminho_saida}")
 
 
 if __name__ == "__main__":
