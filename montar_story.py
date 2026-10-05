@@ -7,41 +7,52 @@ Monta a imagem final de um Story (1080x1920, 9:16 -- Instagram nao aceita
 story fora dessa proporcao) a partir dos mesmos ingredientes usados no
 carrossel: foto do produto/ambiente, paleta e fontes da marca.
 
-Reaproveita os helpers de desenho ja validados em
-montar_carrossel_campanha.py (cores, fontes, corte de imagem, quebra de
-linha) -- so os blocos de composicao aqui sao novos, adaptados pro
-canvas mais alto e mais estreito do story.
+REESCRITO em 05/10/2026 depois de catalogar visualmente os 10 wireframes
+reais da pasta do Drive "referencias e exemplos/exemplo de stories"
+(story1 a story10) -- a versao anterior deste arquivo usava layouts
+inventados (oval generico, grid numerado etc. copiados do carrossel) que
+NAO correspondiam aos wireframes reais. Cada funcao abaixo agora reproduz
+a ESTRUTURA EXATA (posicoes, proporcoes, geometria) de um wireframe
+especifico, so trocando os placeholders "imagem"/"Texto" pelo conteudo
+real -- exatamente a regra que o usuario pediu pro projeto inteiro.
 
-8 blocos cobrem os 20 padroes documentados em
-"copy's para stories/20 Padroes de Stories" (cada padrao e so uma
-combinacao de texto/foto diferente num desses blocos, igual o carrossel
-reaproveita 4 blocos pra 10 formatos):
+10 blocos (um por wireframe) cobrem os 20 padroes documentados em
+"copy's para stories/20 Padroes de Stories" (varios padroes reaproveitam
+o mesmo bloco estrutural, so trocando texto/foto -- igual o carrossel
+reaproveita poucos blocos pra 10 formatos nomeados):
 
-  montar_story_foto           -> vitrine, novidade, ambiente_inspiracao,
-                                  produto_dobrado, preco_destaque,
-                                  contagem_prazo, campanha_tema
-  montar_story_zoom            -> detalhe_textura, detalhe_emocional
-  montar_story_itens           -> itens_inclusos
-  montar_story_estampas        -> estampas_disponiveis
-  montar_story_texto           -> pergunta_engajamento, promocao_relampago
-  montar_story_duas_fotos      -> combo_sugerido, paleta_em_foco,
-                                  qual_estilo, enquete_produto (ver nota)
-  montar_story_grid_numerado   -> giro_categoria
-  montar_story_destaque_secundario -> complete_o_look, combina_com_campanha
+  montar_story_cartao_app       (story1)  -> vitrine, novidade,
+                                              ambiente_inspiracao
+  montar_story_texto_puro       (story2)  -> promocao_relampago,
+                                              pergunta_engajamento
+  montar_story_oval_vertical    (story3)  -> detalhe_textura,
+                                              detalhe_emocional
+  montar_story_foto_minimal     (story4)  -> produto_dobrado,
+                                              preco_destaque, contagem_prazo
+  montar_story_duas_fotos_moldura (story5)-> combo_sugerido, paleta_em_foco,
+                                              qual_estilo, enquete_produto
+  montar_story_abas_onduladas   (story6)  -> campanha_tema,
+                                              (fechamento/CTA generico)
+  montar_story_circulo_fita     (story7)  -> complete_o_look,
+                                              combina_com_campanha
+  montar_story_trio_circulos    (story8)  -> estampas_disponiveis,
+                                              itens_inclusos
+  montar_story_banner_topo      (story9)  -> giro_categoria (legenda simples)
+  montar_story_grade_2x2        (story10) -> giro_categoria, itens_inclusos
 
 NOTA SOBRE ENQUETE/CAIXINHA DE PERGUNTA
 ----------------------------------------
 A API do Instagram nao permite inserir sticker nativo (enquete, caixinha
 de pergunta) numa publicacao automatizada -- isso so da pra fazer
 manualmente, direto no app, depois de publicado. As funcoes abaixo pra
-enquete_produto_story e pergunta_engajamento_story geram só a imagem de
+enquete_produto_story e pergunta_engajamento_story geram so a imagem de
 fundo; o sticker em si tem que ser adicionado a mao.
 
 NOTA SOBRE TEXTO
 ----------------
-Igual no carrossel, nenhum texto fica por conta do Gemini -- tudo que
-aparece escrito e desenhado aqui via Pillow, com a fonte real da marca,
-calculando quebra de linha pra nunca vazar da caixa.
+A API tambem nao renderiza "caption" em Stories -- todo texto tem que
+estar desenhado na propria imagem (ja e o que todas as funcoes abaixo
+fazem).
 
 COMO RODAR
 ----------
@@ -49,408 +60,524 @@ pip install Pillow --break-system-packages
 python montar_story.py
 """
 
-from pathlib import Path
+import math
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 from montar_carrossel_campanha import (
     FONTE_SCRIPT,
     FONTE_TEXTO,
     FONTE_TITULO,
-    LOGO_PADRAO,
     OFF_WHITE,
     ROSA_QUARTZO,
     ROXO_NOBRE,
     _carregar_fonte,
     _cobrir_quadrado,
     _cobrir_retangulo,
-    _forma_um_canto_arredondado,
+    _forma_blob,
     _hex_para_rgb,
     _quebrar_linhas,
+    _rotacionar_com_sombra,
     _texto_centralizado,
 )
 
 LARGURA, ALTURA = 1080, 1920
 
 
-def montar_story_foto(
+def _mascara_onda(largura: int, altura: int, y_base: int, amplitude: int, lado: str = "baixo", fase: float = 0.0) -> Image.Image:
+    """
+    Mascara de uma faixa dividida por uma linha ondulada (1 senoide
+    completa) -- motivo das 'abas' onduladas vistas no wireframe real
+    (exemplo de stories - story6). lado='baixo' preenche tudo ABAIXO da
+    onda; lado='cima' preenche tudo ACIMA.
+    """
+    mask = Image.new("L", (largura, altura), 0)
+    draw = ImageDraw.Draw(mask)
+    pontos = []
+    for x in range(0, largura + 1, 10):
+        y = y_base + amplitude * math.sin(2 * math.pi * x / largura + fase)
+        pontos.append((x, y))
+    if lado == "baixo":
+        pontos = [(0, altura)] + pontos + [(largura, altura)]
+    else:
+        pontos = [(0, 0)] + pontos + [(largura, 0)]
+    draw.polygon(pontos, fill=255)
+    return mask
+
+
+def _forma_fita(largura: int, altura: int, raio_canto: int = 18, profundidade_notch: float = 0.4) -> Image.Image:
+    """
+    Mascara de 'fita/marcador de pagina' (ribbon) -- retangulo com os 2
+    cantos de cima arredondados e um entalhe triangular (V) cortado da
+    base. Motivo visto nos wireframes reais (exemplo de carrosseis -
+    ex9/slide2 e exemplo de stories - story7).
+    """
+    mask = Image.new("L", (largura, altura), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle((0, 0, largura, altura), radius=raio_canto, fill=255)
+    largura_notch = largura * 0.5
+    x0 = (largura - largura_notch) / 2
+    profundidade = altura * profundidade_notch
+    draw.polygon(
+        [(x0, altura), (x0 + largura_notch / 2, altura - profundidade), (x0 + largura_notch, altura)],
+        fill=0,
+    )
+    return mask
+
+
+def _moldura_retrato(imagem: Image.Image, largura: int, altura: int, borda: int = 12) -> Image.Image:
+    """
+    Moldura tipo 'print de foto' -- borda off-white fina uniforme nos 4
+    lados + contorno escuro fino por fora. Motivo das 2 fotos
+    sobrepostas inclinadas do wireframe real (exemplo de stories -
+    story5), diferente da moldura polaroid (que tem base grossa).
+    """
+    foto = _cobrir_retangulo(imagem, largura - borda * 2, altura - borda * 2)
+    moldura = Image.new("RGB", (largura, altura), _hex_para_rgb(OFF_WHITE))
+    moldura.paste(foto, (borda, borda))
+    ImageDraw.Draw(moldura).rectangle((0, 0, largura - 1, altura - 1), outline=(40, 40, 40), width=3)
+    return moldura
+
+
+def montar_story_cartao_app(
     foto_produto: str,
+    texto_banner: str,
+    titulo_card: str,
+    legenda: str,
     caminho_saida: str,
-    badge_linha1: str | None = None,
-    badge_linha2: str | None = None,
-    frase: str | None = None,
-    logo: bool = False,
 ) -> None:
     """
-    Foto full-bleed ocupando o story todo -- bloco mais usado, cobre a
-    maioria dos padroes de "1 produto em foco".
-
-    badge_linha1/2: banner no canto superior esquerdo (igual o hero do
-    carrossel) -- usar pra "NOVIDADE", "SO CHEGOU", tema de campanha etc.
-    frase: texto curto numa faixa semitransparente na base -- usar pra
-    CTA, preco, prazo ou frase de tom de voz. Nunca inventar preco/prazo:
-    só preencher quando o dado vier confirmado de fora.
-    logo: se True, cola o badge da marca (assets/logo_badge.png) num
-    canto inferior, discreto -- usado no padrao produto_dobrado.
+    Banner solto no topo + 'cartao' branco (estilo print de app) com
+    cabecalho proprio e a foto preenchendo o resto do cartao + legenda
+    solta embaixo. Baseado no wireframe real (exemplo de stories - story1).
     """
-    tela = _cobrir_retangulo(Image.open(foto_produto), LARGURA, ALTURA)
-    tela = tela.convert("RGB")
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
     draw = ImageDraw.Draw(tela)
 
-    if badge_linha1:
-        largura_banner, altura_banner = 420, 150
-        draw.rectangle((0, 0, largura_banner, altura_banner), fill=_hex_para_rgb(OFF_WHITE))
-        draw.rectangle((0, altura_banner - 5, largura_banner, altura_banner), fill=_hex_para_rgb(ROSA_QUARTZO))
-        fonte_b1 = _carregar_fonte(FONTE_TITULO, 36, "Bold")
-        draw.text((32, 28), badge_linha1, font=fonte_b1, fill=_hex_para_rgb(ROXO_NOBRE))
-        if badge_linha2:
-            fonte_b2 = _carregar_fonte(FONTE_TITULO, 46, "Bold")
-            draw.text((32, 76), badge_linha2, font=fonte_b2, fill=_hex_para_rgb(ROSA_QUARTZO))
+    bx0, by0 = 0, int(ALTURA * 0.14)
+    bx1, by1 = int(LARGURA * 0.80), by0 + int(ALTURA * 0.05)
+    draw.rectangle((bx0, by0, bx1, by1), fill=_hex_para_rgb(ROXO_NOBRE))
+    fonte_banner = _carregar_fonte(FONTE_TITULO, 34, "Bold")
+    _texto_centralizado(draw, (bx0 + bx1) // 2, by0 + 20, texto_banner, fonte_banner, _hex_para_rgb(OFF_WHITE))
 
-    if frase:
-        fonte_frase = _carregar_fonte(FONTE_TITULO, 38, "Bold")
-        largura_max = LARGURA - 140
-        linhas = _quebrar_linhas(frase.upper(), fonte_frase, largura_max, draw)
-        altura_faixa = 90 + len(linhas) * 50
+    cx0, cy0 = int(LARGURA * 0.08), int(ALTURA * 0.27)
+    cx1, cy1 = int(LARGURA * 0.92), int(ALTURA * 0.84)
+    largura_card, altura_card = cx1 - cx0, cy1 - cy0
 
-        faixa = Image.new("RGBA", (LARGURA, altura_faixa), _hex_para_rgb(ROXO_NOBRE) + (210,))
-        tela_rgba = tela.convert("RGBA")
-        y_faixa = ALTURA - altura_faixa - (260 if logo else 0)
-        tela_rgba.paste(faixa, (0, y_faixa), faixa)
-        tela = tela_rgba.convert("RGB")
-        draw = ImageDraw.Draw(tela)
+    sombra = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sombra).rounded_rectangle((cx0, cy0 + 14, cx1, cy1 + 14), radius=36, fill=(0, 0, 0, 70))
+    sombra = sombra.filter(ImageFilter.GaussianBlur(18))
+    tela = Image.alpha_composite(tela.convert("RGBA"), sombra).convert("RGB")
 
-        y = y_faixa + 45
-        for linha in linhas:
-            _texto_centralizado(draw, LARGURA // 2, y, linha, fonte_frase, _hex_para_rgb(OFF_WHITE))
-            y += 50
+    card = Image.new("RGB", (largura_card, altura_card), _hex_para_rgb(OFF_WHITE))
+    draw_card = ImageDraw.Draw(card)
 
-    if logo:
-        caminho_logo = Path(LOGO_PADRAO)
-        if caminho_logo.exists():
-            logo_img = Image.open(caminho_logo).convert("RGBA")
-            lado_logo = 170
-            escala = lado_logo / max(logo_img.size)
-            logo_img = logo_img.resize((int(logo_img.width * escala), int(logo_img.height * escala)))
-            x_logo = (LARGURA - logo_img.width) // 2
-            y_logo = ALTURA - logo_img.height - 70
-            tela.paste(logo_img, (x_logo, y_logo), logo_img)
+    altura_cabecalho = int(altura_card * 0.08)
+    fonte_titulo_card = _carregar_fonte(FONTE_TITULO, 32, "Bold")
+    draw_card.text((34, (altura_cabecalho - 32) // 2), titulo_card, font=fonte_titulo_card, fill=_hex_para_rgb(ROXO_NOBRE))
+    for i in range(3):
+        cy = altura_cabecalho // 2 - 18 + i * 18
+        draw_card.ellipse((largura_card - 42, cy - 4, largura_card - 34, cy + 4), fill=_hex_para_rgb(ROSA_QUARTZO))
+
+    foto = _cobrir_retangulo(Image.open(foto_produto), largura_card, altura_card - altura_cabecalho)
+    card.paste(foto, (0, altura_cabecalho))
+
+    mascara_card = Image.new("L", (largura_card, altura_card), 0)
+    ImageDraw.Draw(mascara_card).rounded_rectangle((0, 0, largura_card, altura_card), radius=36, fill=255)
+    tela.paste(card, (cx0, cy0), mascara_card)
+
+    draw = ImageDraw.Draw(tela)
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, cy1 + int(ALTURA * 0.025), legenda, fonte_legenda, _hex_para_rgb(ROXO_NOBRE))
 
     tela.save(caminho_saida)
-    print(f"story (foto) salvo em {caminho_saida}")
+    print(f"story (cartao app) salvo em {caminho_saida}")
 
 
-def montar_story_zoom(
-    foto_produto: str,
-    caixa_zoom_relativa: tuple[float, float, float, float],
-    frase: str,
+def montar_story_texto_puro(
+    texto_topo: str,
+    texto_centro: str,
+    texto_rodape: str,
     caminho_saida: str,
 ) -> None:
     """
-    Full-bleed com um recorte AMPLIADO (zoom) da foto -- pra closes de
-    tecido/acabamento, sem mostrar o produto inteiro.
-    caixa_zoom_relativa: (x, y, w, h) em fracao de 0-1 da foto cover-fit.
+    So texto, sem foto -- banner solido flush no topo-esquerda, texto
+    solto flutuando no centro e um paralelogramo solido flush na
+    base-direita (sangrando pela borda). Baseado no wireframe real
+    (exemplo de stories - story2) -- usado pra CTA/enquete/pergunta onde
+    nao ha produto pra mostrar.
     """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    draw = ImageDraw.Draw(tela)
+
+    bx1 = int(LARGURA * 0.78)
+    by0, by1 = int(ALTURA * 0.08), int(ALTURA * 0.23)
+    draw.rectangle((0, by0, bx1, by1), fill=_hex_para_rgb(ROXO_NOBRE))
+    fonte_banner = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    _texto_centralizado(draw, bx1 // 2, (by0 + by1) // 2 - 22, texto_topo, fonte_banner, _hex_para_rgb(OFF_WHITE))
+
+    fonte_centro = _carregar_fonte(FONTE_TITULO, 44, "Bold")
+    linhas = _quebrar_linhas(texto_centro, fonte_centro, int(LARGURA * 0.8), draw)
+    y = int(ALTURA * 0.43) - len(linhas) * 26
+    for linha in linhas:
+        _texto_centralizado(draw, LARGURA // 2, y, linha, fonte_centro, _hex_para_rgb(ROXO_NOBRE))
+        y += 56
+
+    px0 = int(LARGURA * 0.40)
+    py0 = int(ALTURA * 0.75)
+    draw.polygon(
+        [(px0, py0), (LARGURA, py0), (LARGURA, ALTURA), (px0 - int(LARGURA * 0.18), ALTURA)],
+        fill=_hex_para_rgb(ROXO_NOBRE),
+    )
+    fonte_rodape = _carregar_fonte(FONTE_TITULO, 38, "Bold")
+    _texto_centralizado(draw, int(LARGURA * 0.72), py0 + int(ALTURA * 0.12), texto_rodape, fonte_rodape, _hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"story (texto puro) salvo em {caminho_saida}")
+
+
+def montar_story_oval_vertical(
+    foto_produto: str,
+    texto_banner: str,
+    texto_rodape: str,
+    legenda_externa: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Banner solto no topo + foto recortada num oval vertical + rodape
+    solido escuro sobrepondo a base do oval + legenda solta embaixo de
+    tudo. Baseado no wireframe real (exemplo de stories - story3).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    draw = ImageDraw.Draw(tela)
+
+    bx0, bx1 = int(LARGURA * 0.17), int(LARGURA * 0.83)
+    by0, by1 = int(ALTURA * 0.06), int(ALTURA * 0.12)
+    draw.rectangle((bx0, by0, bx1, by1), fill=_hex_para_rgb(ROXO_NOBRE))
+    fonte_banner = _carregar_fonte(FONTE_TITULO, 32, "Bold")
+    _texto_centralizado(draw, (bx0 + bx1) // 2, by0 + 12, texto_banner, fonte_banner, _hex_para_rgb(OFF_WHITE))
+
+    ox0, ox1 = int(LARGURA * 0.17), int(LARGURA * 0.83)
+    oy0, oy1 = int(ALTURA * 0.17), int(ALTURA * 0.63)
+    largura_oval, altura_oval = ox1 - ox0, oy1 - oy0
+
+    foto = _cobrir_retangulo(Image.open(foto_produto), largura_oval, altura_oval)
+    mascara_oval = Image.new("L", (largura_oval, altura_oval), 0)
+    ImageDraw.Draw(mascara_oval).ellipse((0, 0, largura_oval, altura_oval), fill=255)
+    tela.paste(foto, (ox0, oy0), mascara_oval)
+    draw.ellipse((ox0, oy0, ox1, oy1), outline=_hex_para_rgb(ROXO_NOBRE), width=4)
+
+    fy0, fy1 = int(ALTURA * 0.67), int(ALTURA * 0.84)
+    draw.rectangle((bx0, fy0, bx1, fy1), fill=_hex_para_rgb(ROXO_NOBRE))
+    fonte_rodape = _carregar_fonte(FONTE_TITULO, 34, "Bold")
+    _texto_centralizado(draw, (bx0 + bx1) // 2, int(ALTURA * 0.79), texto_rodape, fonte_rodape, _hex_para_rgb(OFF_WHITE))
+
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, int(ALTURA * 0.88), legenda_externa, fonte_legenda, _hex_para_rgb(ROXO_NOBRE))
+
+    tela.save(caminho_saida)
+    print(f"story (oval vertical) salvo em {caminho_saida}")
+
+
+def montar_story_foto_minimal(
+    foto_produto: str,
+    legenda: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Foto full-bleed (ocupa o canvas inteiro) com uma caixa solida flush
+    na borda direita, na parte inferior, contendo a legenda -- o layout
+    mais simples dos wireframes. Baseado no wireframe real (exemplo de
+    stories - story4).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
     foto = _cobrir_retangulo(Image.open(foto_produto), LARGURA, ALTURA)
+    tela.paste(foto, (0, 0))
 
-    fx, fy, fw, fh = caixa_zoom_relativa
-    x0, y0 = int(fx * LARGURA), int(fy * ALTURA)
-    x1, y1 = int((fx + fw) * LARGURA), int((fy + fh) * ALTURA)
-    recorte = foto.crop((x0, y0, x1, y1)).resize((LARGURA, ALTURA))
-    tela = recorte.convert("RGBA")
-
-    altura_faixa = 220
-    faixa = Image.new("RGBA", (LARGURA, altura_faixa), _hex_para_rgb(OFF_WHITE) + (235,))
-    tela.paste(faixa, (0, ALTURA - altura_faixa), faixa)
-    tela = tela.convert("RGB")
+    bx0, by0 = int(LARGURA * 0.30), int(ALTURA * 0.74)
+    by1 = int(ALTURA * 0.90)
+    overlay = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+    ImageDraw.Draw(overlay).rectangle((bx0, by0, LARGURA, by1), fill=_hex_para_rgb(ROXO_NOBRE) + (235,))
+    tela = Image.alpha_composite(tela.convert("RGBA"), overlay).convert("RGB")
     draw = ImageDraw.Draw(tela)
 
-    fonte_frase = _carregar_fonte(FONTE_TITULO, 42, "Bold")
-    linhas = _quebrar_linhas(frase.upper(), fonte_frase, LARGURA - 120, draw)
-    y = ALTURA - altura_faixa + (altura_faixa - len(linhas) * 52) // 2
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 38, "Bold")
+    linhas = _quebrar_linhas(legenda, fonte_legenda, LARGURA - bx0 - 60, draw)
+    y = (by0 + by1) // 2 - len(linhas) * 24
     for linha in linhas:
-        _texto_centralizado(draw, LARGURA // 2, y, linha, fonte_frase, _hex_para_rgb(ROXO_NOBRE))
-        y += 52
+        draw.text((bx0 + 40, y), linha, font=fonte_legenda, fill=_hex_para_rgb(OFF_WHITE))
+        y += 48
 
     tela.save(caminho_saida)
-    print(f"story (zoom) salvo em {caminho_saida}")
+    print(f"story (foto minimal) salvo em {caminho_saida}")
 
 
-def montar_story_itens(
-    foto_produto: str,
-    itens: list[str],
+def montar_story_duas_fotos_moldura(
+    foto_cima: str,
+    foto_baixo: str,
+    texto_meio: str,
+    legenda: str,
     caminho_saida: str,
-    titulo_caixa: str = "ITENS INCLUSOS",
 ) -> None:
-    """Foto full-bleed + caixa com lista curta (2-3 itens) ancorada na base."""
-    tela = _cobrir_retangulo(Image.open(foto_produto), LARGURA, ALTURA).convert("RGB")
-
-    largura_caixa, altura_caixa = LARGURA, 90 + len(itens) * 60 + 70
-    caixa = Image.new("RGBA", (largura_caixa, altura_caixa), _hex_para_rgb(OFF_WHITE) + (255,))
-    mascara = _forma_um_canto_arredondado(largura_caixa, altura_caixa, raio=90, canto="tl")
-    caixa.putalpha(mascara)
-    tela_rgba = tela.convert("RGBA")
-    tela_rgba.paste(caixa, (0, ALTURA - altura_caixa), caixa)
-    tela = tela_rgba.convert("RGB")
+    """
+    2 fotos com moldura tipo print, levemente inclinadas, em cascata
+    diagonal, com um cartao branco de texto sobrepondo as duas no meio e
+    uma legenda solta no canto superior direito. Baseado no wireframe
+    real (exemplo de stories - story5).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), (90, 90, 90))
     draw = ImageDraw.Draw(tela)
 
-    x_texto, y_texto = 60, ALTURA - altura_caixa + 50
-    fonte_caixa_titulo = _carregar_fonte(FONTE_TITULO, 38, "Bold")
-    draw.text((x_texto, y_texto), titulo_caixa, font=fonte_caixa_titulo, fill=_hex_para_rgb(ROSA_QUARTZO))
-    draw.line((x_texto, y_texto + 50, x_texto + 220, y_texto + 50), fill=_hex_para_rgb(ROSA_QUARTZO), width=2)
+    largura_foto, altura_foto = 540, 760
+    moldura1 = _moldura_retrato(Image.open(foto_cima), largura_foto, altura_foto)
+    moldura2 = _moldura_retrato(Image.open(foto_baixo), largura_foto, altura_foto)
+    girada1 = _rotacionar_com_sombra(moldura1, -6)
+    girada2 = _rotacionar_com_sombra(moldura2, 5)
+    tela.paste(girada1, (60, 180), girada1)
+    tela.paste(girada2, (LARGURA - largura_foto - 60, 960), girada2)
 
-    fonte_item = _carregar_fonte(FONTE_TITULO, 32, "Bold")
-    y = y_texto + 80
-    for item in itens:
-        draw.ellipse((x_texto, y + 10, x_texto + 10, y + 20), fill=_hex_para_rgb(ROXO_NOBRE))
-        draw.text((x_texto + 28, y), item, font=fonte_item, fill=_hex_para_rgb(ROXO_NOBRE))
-        y += 60
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    draw.text((680, 400), legenda, font=fonte_legenda, fill=_hex_para_rgb(OFF_WHITE))
 
-    tela.save(caminho_saida)
-    print(f"story (itens) salvo em {caminho_saida}")
-
-
-def montar_story_estampas(
-    fotos_estampas: list[str],
-    caminho_saida: str,
-    texto_central: tuple[str, str, str] = ("TEMOS", "{n} ESTAMPAS", "PRA VOCÊ!"),
-) -> None:
-    """Fundo off-white + coluna de circulos com as estampas + texto central."""
-    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
-    draw = ImageDraw.Draw(tela)
-
-    raio = 155
-    centro_x = LARGURA // 2
-    n = len(fotos_estampas)
-    y_inicio = 260
-    espaco = 420
-    for i, caminho_foto in enumerate(fotos_estampas[:4]):
-        cy = y_inicio + i * espaco
-        foto = _cobrir_quadrado(Image.open(caminho_foto), raio * 2)
-        mascara_circulo = Image.new("L", (raio * 2, raio * 2), 0)
-        ImageDraw.Draw(mascara_circulo).ellipse((0, 0, raio * 2, raio * 2), fill=255)
-        tela.paste(foto, (centro_x - raio, cy - raio), mascara_circulo)
-        draw.ellipse((centro_x - raio, cy - raio, centro_x + raio, cy + raio), outline=_hex_para_rgb(ROXO_NOBRE), width=5)
-
-    fonte_central = _carregar_fonte(FONTE_TITULO, 40, "Bold")
-    fonte_central_destaque = _carregar_fonte(FONTE_TITULO, 48, "Bold")
-    linha1, linha2, linha3 = texto_central
-    linha2 = linha2.format(n=n)
-
-    y = y_inicio + (min(n, 4) - 1) * espaco + raio + 70
-    _texto_centralizado(draw, centro_x, y, linha1, fonte_central, _hex_para_rgb(ROXO_NOBRE))
-    y += 52
-    _texto_centralizado(draw, centro_x, y, linha2, fonte_central_destaque, _hex_para_rgb(ROSA_QUARTZO))
-    y += 58
-    _texto_centralizado(draw, centro_x, y, linha3, fonte_central, _hex_para_rgb(ROXO_NOBRE))
-
-    tela.save(caminho_saida)
-    print(f"story (estampas) salvo em {caminho_saida}")
-
-
-def montar_story_texto(
-    titulo: str,
-    corpo: str,
-    caminho_saida: str,
-    cor_fundo: str = ROXO_NOBRE,
-    cor_texto: str = OFF_WHITE,
-    cor_destaque: str = ROSA_QUARTZO,
-    foto_pequena: str | None = None,
-) -> None:
-    """
-    Fundo de cor solida + titulo/corpo centralizados -- pra anuncio de
-    promocao, pergunta de engajamento, etc.
-    foto_pequena: se informado, cola uma foto pequena do produto acima
-    do texto (usado em promocao_relampago_story).
-    """
-    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(cor_fundo))
-    draw = ImageDraw.Draw(tela)
-    centro_x = LARGURA // 2
-
-    y_topo = 220
-    if foto_pequena:
-        lado_foto = 560
-        foto = _cobrir_quadrado(Image.open(foto_pequena), lado_foto)
-        mascara = Image.new("L", (lado_foto, lado_foto), 0)
-        ImageDraw.Draw(mascara).rounded_rectangle((0, 0, lado_foto, lado_foto), radius=32, fill=255)
-        tela.paste(foto, (centro_x - lado_foto // 2, y_topo), mascara)
-        y_topo += lado_foto + 70
-
-    fonte_titulo = _carregar_fonte(FONTE_TITULO, 60, "Bold")
-    largura_max = LARGURA - 140
-    linhas_titulo = _quebrar_linhas(titulo.upper(), fonte_titulo, largura_max, draw)
-
-    fonte_corpo = _carregar_fonte(FONTE_TEXTO, 34, "Regular")
-    linhas_corpo = _quebrar_linhas(corpo, fonte_corpo, largura_max, draw)
-
-    y = y_topo
-    linha_y = y - 30
-    draw.line((centro_x - 55, linha_y, centro_x + 55, linha_y), fill=_hex_para_rgb(cor_destaque), width=3)
-    for linha in linhas_titulo:
-        _texto_centralizado(draw, centro_x, y, linha, fonte_titulo, _hex_para_rgb(cor_destaque))
-        y += 70
-    y += 30
-    for linha in linhas_corpo:
-        _texto_centralizado(draw, centro_x, y, linha, fonte_corpo, _hex_para_rgb(cor_texto))
-        y += 46
-
-    tela.save(caminho_saida)
-    print(f"story (texto) salvo em {caminho_saida}")
-
-
-def montar_story_duas_fotos(
-    foto_topo: str,
-    foto_base: str,
-    rotulo_topo: str,
-    rotulo_base: str,
-    titulo: str,
-    caminho_saida: str,
-) -> None:
-    """
-    Duas fotos empilhadas (metade de cima / metade de baixo -- faz mais
-    sentido que lado a lado no formato retrato estreito) -- combo,
-    paleta, comparacao de estilos, ou base pra enquete manual.
-    """
-    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
-    draw = ImageDraw.Draw(tela)
-
-    fonte_titulo = _carregar_fonte(FONTE_TITULO, 46, "Bold")
-    largura_t = draw.textlength(titulo.upper(), font=fonte_titulo)
-    draw.text(((LARGURA - largura_t) / 2, 60), titulo.upper(), font=fonte_titulo, fill=_hex_para_rgb(ROXO_NOBRE))
-
-    largura_painel, altura_painel = 940, 800
-    x_painel = (LARGURA - largura_painel) // 2
-    for y_painel, caminho_foto, rotulo in (
-        (200, foto_topo, rotulo_topo),
-        (1040, foto_base, rotulo_base),
-    ):
-        foto = _cobrir_retangulo(Image.open(caminho_foto), largura_painel, altura_painel)
-        mascara = Image.new("L", (largura_painel, altura_painel), 0)
-        ImageDraw.Draw(mascara).rounded_rectangle((0, 0, largura_painel, altura_painel), radius=28, fill=255)
-        tela.paste(foto, (x_painel, y_painel), mascara)
-
-        fonte_rotulo = _carregar_fonte(FONTE_TITULO, 30, "Bold")
-        pad_x, pad_y = 22, 12
-        largura_r = draw.textlength(rotulo, font=fonte_rotulo) + pad_x * 2
-        x_r = x_painel + 22
-        y_r = y_painel + altura_painel - 30 - pad_y * 2 - 20
-        draw.rounded_rectangle((x_r, y_r, x_r + largura_r, y_r + 30 + pad_y * 2), radius=22, fill=_hex_para_rgb(OFF_WHITE))
-        draw.text((x_r + pad_x, y_r + pad_y - 2), rotulo, font=fonte_rotulo, fill=_hex_para_rgb(ROXO_NOBRE))
-
-    tela.save(caminho_saida)
-    print(f"story (duas fotos) salvo em {caminho_saida}")
-
-
-def montar_story_grid_numerado(
-    fotos: list[str],
-    titulo: str,
-    caminho_saida: str,
-) -> None:
-    """Grade 2x2 numerada (1,2,3,4) -- giro por categoria/linha de produto."""
-    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
-    draw = ImageDraw.Draw(tela)
-
-    fonte_titulo = _carregar_fonte(FONTE_TITULO, 50, "Bold")
-    linhas = titulo.upper().split(" | ")
-    y_titulo = 100
-    for linha in linhas:
-        largura = draw.textlength(linha, font=fonte_titulo)
-        draw.text(((LARGURA - largura) / 2, y_titulo), linha, font=fonte_titulo, fill=_hex_para_rgb(ROXO_NOBRE))
-        y_titulo += 62
-
-    lado = 460
-    espaco = 40
-    x0 = (LARGURA - (lado * 2 + espaco)) // 2
-    y0 = y_titulo + 80
-    posicoes = [
-        (x0, y0),
-        (x0 + lado + espaco, y0),
-        (x0, y0 + lado + espaco),
-        (x0 + lado + espaco, y0 + lado + espaco),
-    ]
-    for numero, (pos, caminho_foto) in enumerate(zip(posicoes, fotos), start=1):
-        foto = _cobrir_quadrado(Image.open(caminho_foto), lado)
-        mascara = Image.new("L", (lado, lado), 0)
-        ImageDraw.Draw(mascara).rounded_rectangle((0, 0, lado, lado), radius=28, fill=255)
-        tela.paste(foto, pos, mascara)
-
-        raio_bolha = 36
-        cx, cy = pos[0] + raio_bolha + 12, pos[1] + raio_bolha + 12
-        draw.ellipse((cx - raio_bolha, cy - raio_bolha, cx + raio_bolha, cy + raio_bolha), fill=_hex_para_rgb(ROXO_NOBRE))
-        fonte_numero = _carregar_fonte(FONTE_TITULO, 34, "Bold")
-        largura_n = draw.textlength(str(numero), font=fonte_numero)
-        draw.text((cx - largura_n / 2, cy - 21), str(numero), font=fonte_numero, fill=_hex_para_rgb(OFF_WHITE))
-
-    tela.save(caminho_saida)
-    print(f"story (grid numerado) salvo em {caminho_saida}")
-
-
-def montar_story_destaque_secundario(
-    foto_principal: str,
-    foto_secundaria: str,
-    rotulo_principal: str,
-    rotulo_secundario: str,
-    caminho_saida: str,
-) -> None:
-    """
-    Foto principal full-bleed + foto secundaria pequena num canto (com
-    seta apontando) -- "complete o look" / "combina com".
-    """
-    tela = _cobrir_retangulo(Image.open(foto_principal), LARGURA, ALTURA).convert("RGBA")
-
-    lado_secundaria = 360
-    foto_sec = _cobrir_quadrado(Image.open(foto_secundaria), lado_secundaria)
-    mascara = Image.new("L", (lado_secundaria, lado_secundaria), 0)
-    ImageDraw.Draw(mascara).rounded_rectangle((0, 0, lado_secundaria, lado_secundaria), radius=28, fill=255)
-
-    x_sec, y_sec = LARGURA - lado_secundaria - 50, ALTURA - lado_secundaria - 260
+    largura_card, altura_card = 560, 340
+    x_card, y_card = (LARGURA - largura_card) // 2, 760
     sombra = Image.new("RGBA", tela.size, (0, 0, 0, 0))
     ImageDraw.Draw(sombra).rounded_rectangle(
-        (x_sec, y_sec + 8, x_sec + lado_secundaria, y_sec + lado_secundaria + 8), radius=28, fill=(0, 0, 0, 90)
+        (x_card, y_card + 8, x_card + largura_card, y_card + altura_card + 8), radius=30, fill=(0, 0, 0, 90)
     )
-    sombra = sombra.filter(ImageFilter.GaussianBlur(12))
-    tela = Image.alpha_composite(tela, sombra)
-
-    foto_sec_rgba = foto_sec.convert("RGBA")
-    foto_sec_rgba.putalpha(mascara)
-    tela.paste(foto_sec_rgba, (x_sec, y_sec), foto_sec_rgba)
-    tela = tela.convert("RGB")
+    sombra = sombra.filter(ImageFilter.GaussianBlur(14))
+    tela = Image.alpha_composite(tela.convert("RGBA"), sombra).convert("RGB")
     draw = ImageDraw.Draw(tela)
-    draw.rounded_rectangle((x_sec, y_sec, x_sec + lado_secundaria, y_sec + lado_secundaria), radius=28, outline=_hex_para_rgb(OFF_WHITE), width=5)
+    draw.rounded_rectangle((x_card, y_card, x_card + largura_card, y_card + altura_card), radius=30, fill=_hex_para_rgb(OFF_WHITE))
 
-    fonte_rotulo = _carregar_fonte(FONTE_TITULO, 26, "Bold")
-    pad_x, pad_y = 18, 10
-    for rotulo, pos in (
-        (rotulo_principal, (40, ALTURA - 170)),
-        (rotulo_secundario, (x_sec + 18, y_sec + lado_secundaria - 56)),
-    ):
-        largura_r = draw.textlength(rotulo, font=fonte_rotulo) + pad_x * 2
-        draw.rounded_rectangle((pos[0], pos[1], pos[0] + largura_r, pos[1] + 36 + pad_y), radius=18, fill=_hex_para_rgb(OFF_WHITE))
-        draw.text((pos[0] + pad_x, pos[1] + pad_y - 4), rotulo, font=fonte_rotulo, fill=_hex_para_rgb(ROXO_NOBRE))
+    fonte_meio = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    linhas = _quebrar_linhas(texto_meio, fonte_meio, largura_card - 80, draw)
+    y = y_card + (altura_card - len(linhas) * 48) // 2
+    for linha in linhas:
+        _texto_centralizado(draw, LARGURA // 2, y, linha, fonte_meio, _hex_para_rgb(ROXO_NOBRE))
+        y += 48
 
     tela.save(caminho_saida)
-    print(f"story (destaque secundario) salvo em {caminho_saida}")
+    print(f"story (duas fotos com moldura) salvo em {caminho_saida}")
+
+
+def montar_story_abas_onduladas(
+    foto_produto: str,
+    texto_meio: str,
+    texto_cta: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Foto no topo ate uma linha ondulada, faixa media ondulada com texto,
+    faixa inferior solida com um botao-pilula de CTA. Baseado no
+    wireframe real (exemplo de stories - story6).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    foto = _cobrir_retangulo(Image.open(foto_produto), LARGURA, ALTURA)
+    tela.paste(foto, (0, 0))
+
+    y_onda1, y_onda2 = int(ALTURA * 0.56), int(ALTURA * 0.87)
+    overlay = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+    mascara_meio = _mascara_onda(LARGURA, ALTURA, y_onda1, 40, "baixo")
+    faixa_meio = Image.new("RGBA", tela.size, (150, 150, 150, 235))
+    overlay.paste(faixa_meio, (0, 0), mascara_meio)
+    mascara_base = _mascara_onda(LARGURA, ALTURA, y_onda2, 30, "baixo")
+    faixa_base = Image.new("RGBA", tela.size, _hex_para_rgb(ROXO_NOBRE) + (255,))
+    overlay.paste(faixa_base, (0, 0), mascara_base)
+    tela = Image.alpha_composite(tela.convert("RGBA"), overlay).convert("RGB")
+    draw = ImageDraw.Draw(tela)
+
+    fonte_meio = _carregar_fonte(FONTE_TITULO, 36, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, (y_onda1 + y_onda2) // 2 - 20, texto_meio, fonte_meio, _hex_para_rgb(OFF_WHITE))
+
+    largura_pill, altura_pill = 760, 100
+    x_pill = (LARGURA - largura_pill) // 2
+    y_pill = int(ALTURA * 0.92)
+    draw.rounded_rectangle((x_pill, y_pill, x_pill + largura_pill, y_pill + altura_pill), radius=50, fill=_hex_para_rgb(OFF_WHITE))
+    fonte_cta = _carregar_fonte(FONTE_TITULO, 38, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, y_pill + 30, texto_cta, fonte_cta, _hex_para_rgb(ROXO_NOBRE))
+
+    tela.save(caminho_saida)
+    print(f"story (abas onduladas) salvo em {caminho_saida}")
+
+
+def montar_story_circulo_fita(
+    foto_produto: str,
+    texto_fita: str,
+    texto_circulo: str,
+    legenda_topo: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Circulo grande sangrando pelas bordas inferior-esquerda com a foto +
+    uma fita/marcador sobrepondo o canto superior-direito do circulo +
+    legenda solta no topo do canvas. Baseado no wireframe real (exemplo
+    de stories - story7).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    draw = ImageDraw.Draw(tela)
+
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, int(ALTURA * 0.07), legenda_topo, fonte_legenda, _hex_para_rgb(ROXO_NOBRE))
+
+    diametro = int(LARGURA * 0.95)
+    cx, cy = int(LARGURA * 0.34), int(ALTURA * 0.80)
+    raio = diametro // 2
+    foto = _cobrir_quadrado(Image.open(foto_produto), diametro)
+    mascara_circulo = Image.new("L", (diametro, diametro), 0)
+    ImageDraw.Draw(mascara_circulo).ellipse((0, 0, diametro, diametro), fill=255)
+    tela.paste(foto, (cx - raio, cy - raio), mascara_circulo)
+
+    mascara_circulo_cheia = Image.new("L", tela.size, 0)
+    ImageDraw.Draw(mascara_circulo_cheia).ellipse((cx - raio, cy - raio, cx + raio, cy + raio), fill=255)
+    mascara_rodape = Image.new("L", tela.size, 0)
+    ImageDraw.Draw(mascara_rodape).rectangle((0, int(ALTURA * 0.88), LARGURA, ALTURA), fill=255)
+    mascara_faixa = ImageChops.multiply(mascara_circulo_cheia, mascara_rodape)
+
+    overlay = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+    faixa = Image.new("RGBA", tela.size, _hex_para_rgb(ROXO_NOBRE) + (210,))
+    overlay.paste(faixa, (0, 0), mascara_faixa)
+    tela = Image.alpha_composite(tela.convert("RGBA"), overlay).convert("RGB")
+    draw = ImageDraw.Draw(tela)
+
+    fonte_circulo = _carregar_fonte(FONTE_TITULO, 38, "Bold")
+    _texto_centralizado(draw, cx, int(ALTURA * 0.90), texto_circulo, fonte_circulo, _hex_para_rgb(OFF_WHITE))
+
+    largura_fita, altura_fita = 260, 220
+    x_fita, y_fita = cx + int(raio * 0.35), cy - raio - int(altura_fita * 0.25)
+    mascara_fita = _forma_fita(largura_fita, altura_fita, raio_canto=18, profundidade_notch=0.35)
+    fita = Image.new("RGBA", (largura_fita, altura_fita), _hex_para_rgb(ROSA_QUARTZO) + (255,))
+    fita.putalpha(mascara_fita)
+    tela.paste(fita, (x_fita, y_fita), fita)
+    draw = ImageDraw.Draw(tela)
+    fonte_fita = _carregar_fonte(FONTE_TITULO, 32, "Bold")
+    _texto_centralizado(draw, x_fita + largura_fita // 2, y_fita + 60, texto_fita, fonte_fita, _hex_para_rgb(OFF_WHITE))
+
+    tela.save(caminho_saida)
+    print(f"story (circulo com fita) salvo em {caminho_saida}")
+
+
+def montar_story_trio_circulos(
+    fotos: list[str],
+    texto_centro: str,
+    caminho_saida: str,
+) -> None:
+    """
+    3 circulos grandes se sobrepondo, cada um sangrando por pelo menos
+    uma borda do canvas, com texto solto no espaco negativo entre eles.
+    Baseado no wireframe real (exemplo de stories - story8).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), (150, 150, 150))
+
+    circulos = [
+        (int(LARGURA * 0.30), int(ALTURA * 0.02), int(LARGURA * 0.78)),
+        (int(LARGURA * 0.78), int(ALTURA * 0.47), int(LARGURA * 0.58)),
+        (int(LARGURA * 0.30), int(ALTURA * 0.83), int(LARGURA * 0.76)),
+    ]
+    for (cx, cy, diametro), caminho_foto in zip(circulos, fotos[:3]):
+        raio = diametro // 2
+        foto = _cobrir_quadrado(Image.open(caminho_foto), diametro)
+        mascara_circulo = Image.new("L", (diametro, diametro), 0)
+        ImageDraw.Draw(mascara_circulo).ellipse((0, 0, diametro, diametro), fill=255)
+        base = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+        base.paste(foto, (cx - raio, cy - raio), mascara_circulo)
+        tela = Image.alpha_composite(tela.convert("RGBA"), base).convert("RGB")
+        draw = ImageDraw.Draw(tela)
+        draw.ellipse((cx - raio, cy - raio, cx + raio, cy + raio), outline=(90, 90, 90), width=4)
+
+    draw = ImageDraw.Draw(tela)
+    fonte_centro = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    linhas = _quebrar_linhas(texto_centro, fonte_centro, int(LARGURA * 0.3), draw)
+    y = int(ALTURA * 0.47) - len(linhas) * 24
+    for linha in linhas:
+        draw.text((int(LARGURA * 0.08), y), linha, font=fonte_centro, fill=(20, 20, 20))
+        y += 48
+
+    tela.save(caminho_saida)
+    print(f"story (trio de circulos) salvo em {caminho_saida}")
+
+
+def montar_story_banner_topo(
+    foto_produto: str,
+    texto_banner: str,
+    legenda_centro: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Foto full-bleed com um banner solido perto do topo + legenda solta
+    flutuando mais abaixo -- o layout mais direto, pra textos curtos de
+    efeito. Baseado no wireframe real (exemplo de stories - story9).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(OFF_WHITE))
+    foto = _cobrir_retangulo(Image.open(foto_produto), LARGURA, ALTURA)
+    tela.paste(foto, (0, 0))
+    draw = ImageDraw.Draw(tela)
+
+    bx0, bx1 = int(LARGURA * 0.17), int(LARGURA * 0.82)
+    by0, by1 = int(ALTURA * 0.15), int(ALTURA * 0.23)
+    draw.rectangle((bx0, by0, bx1, by1), fill=(70, 70, 70))
+    fonte_banner = _carregar_fonte(FONTE_TITULO, 34, "Bold")
+    linhas = _quebrar_linhas(texto_banner, fonte_banner, bx1 - bx0 - 40, draw)
+    y = (by0 + by1) // 2 - len(linhas) * 22
+    for linha in linhas:
+        _texto_centralizado(draw, (bx0 + bx1) // 2, y, linha, fonte_banner, _hex_para_rgb(OFF_WHITE))
+        y += 44
+
+    fonte_legenda = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+    _texto_centralizado(draw, LARGURA // 2, int(ALTURA * 0.46), legenda_centro, fonte_legenda, (20, 20, 20))
+
+    tela.save(caminho_saida)
+    print(f"story (banner no topo) salvo em {caminho_saida}")
+
+
+def montar_story_grade_2x2(
+    fotos: list[str],
+    celula_texto: int,
+    texto: str,
+    caminho_saida: str,
+) -> None:
+    """
+    Grade 2x2 flush preenchendo o canvas inteiro, com 3 fotos e 1 celula
+    de texto solido. celula_texto: indice 0-3 (0=sup-esq, 1=sup-dir,
+    2=inf-esq, 3=inf-dir). Baseado no wireframe real (exemplo de stories
+    - story10).
+    """
+    tela = Image.new("RGB", (LARGURA, ALTURA), _hex_para_rgb(ROXO_NOBRE))
+    draw = ImageDraw.Draw(tela)
+
+    largura_cel, altura_cel = LARGURA // 2, ALTURA // 2
+    fonte_celula = _carregar_fonte(FONTE_TITULO, 40, "Bold")
+
+    indice_foto = 0
+    for indice in range(4):
+        linha, coluna = divmod(indice, 2)
+        x, y = coluna * largura_cel, linha * altura_cel
+        if indice == celula_texto:
+            draw.rectangle((x, y, x + largura_cel, y + altura_cel), fill=_hex_para_rgb(ROXO_NOBRE))
+            _texto_centralizado(draw, x + largura_cel // 2, y + altura_cel // 2 - 20, texto, fonte_celula, _hex_para_rgb(OFF_WHITE))
+        else:
+            foto = _cobrir_retangulo(Image.open(fotos[indice_foto]), largura_cel, altura_cel)
+            tela.paste(foto, (x, y))
+            indice_foto += 1
+
+    tela.save(caminho_saida)
+    print(f"story (grade 2x2) salvo em {caminho_saida}")
 
 
 if __name__ == "__main__":
-    foto_principal = "saida/teste_pipeline_p009_0.png"
+    foto_principal = "saida/p001_1.png"
+    fotos_exemplo = [
+        "saida/p001_1.png", "saida/p001_v1_1.png", "saida/p002_1.png",
+        "saida/p002_v1_0.png", "saida/p003_1.png",
+    ]
 
-    montar_story_foto(
-        foto_produto=foto_principal,
-        caminho_saida="saida/story_vitrine.png",
-        badge_linha1="SÓ CHEGOU",
-        frase="Chame no direct e garanta o seu!",
-    )
-
-    montar_story_itens(
-        foto_produto=foto_principal,
-        itens=["01 Colcha com Babado", "01 Cortina", "02 Fronhas"],
-        caminho_saida="saida/story_itens.png",
-    )
-
-    montar_story_texto(
-        titulo="Promoção relâmpago",
-        corpo="Só até hoje às 23h59 — chame no direct!",
-        caminho_saida="saida/story_promocao.png",
-        foto_pequena=foto_principal,
-    )
+    montar_story_cartao_app(foto_principal, "NOVA COLEÇÃO", "Jogo de Quarto", "Confira os detalhes", "saida/teste_story1.png")
+    montar_story_texto_puro("OFERTA ESPECIAL", "O que você achou dessa estampa?", "Responda", "saida/teste_story2.png")
+    montar_story_oval_vertical(foto_principal, "DESTAQUE", "Toque de elegância", "Confira mais", "saida/teste_story3.png")
+    montar_story_foto_minimal(foto_principal, "Conforto em cada detalhe", "saida/teste_story4.png")
+    montar_story_duas_fotos_moldura(foto_principal, fotos_exemplo[1], "Combine e renove", "Veja como", "saida/teste_story5.png")
+    montar_story_abas_onduladas(foto_principal, "Qualidade em cada fio", "Saiba mais", "saida/teste_story6.png")
+    montar_story_circulo_fita(foto_principal, "Novo", "Peça completa", "Inspiração do dia", "saida/teste_story7.png")
+    montar_story_trio_circulos(fotos_exemplo[:3], "Estampas disponíveis", "saida/teste_story8.png")
+    montar_story_banner_topo(foto_principal, "PROMOÇÃO RELÂMPAGO", "Só até domingo!", "saida/teste_story9.png")
+    montar_story_grade_2x2(fotos_exemplo[:3], 3, "Saiba mais", "saida/teste_story10.png")
