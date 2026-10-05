@@ -367,6 +367,10 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
     produtos so com imagem_estampa (sem imagem_ambiente) as vezes saiam
     com cenas genericas de decoracao completamente desconectadas do
     produto real (ex: p002 "tapete medio" saiu com foto de quarto/cama).
+
+    Criterio 3 (enquadramento/zoom) adicionado depois -- closes muito
+    aproximados na intencao de mostrar a estampa estavam saindo
+    distorcidos (ver filtro pedido pelo usuario).
     """
     return (
         f"Voce e um revisor de qualidade de fotos de produto para "
@@ -383,10 +387,15 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
         "diferente, deve ser REPROVADA.\n"
         "2. O padrao/estampa e a cor do tecido na IMAGEM 1 batem com as "
         "referencias reais fornecidas? Um padrao/cor sem nenhuma relacao "
-        "com o real deve ser REPROVADO.\n\n"
+        "com o real deve ser REPROVADO.\n"
+        "3. O enquadramento da IMAGEM 1 esta correto -- nem um zoom/corte "
+        "tao aproximado na estampa que distorce o padrao do tecido ou "
+        "deixa irreconhecivel o que e o produto, nem tao afastado que o "
+        "produto fique pequeno demais na cena? Um corte exagerado demais "
+        "deve ser REPROVADO.\n\n"
         "Responda EXATAMENTE nesse formato, sem mais nada:\n"
         "LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
-        "'NAO' se reprovada por qualquer um dos dois motivos acima.\n"
+        "'NAO' se reprovada por qualquer um dos tres motivos acima.\n"
         "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
         "poder corrigir). Se SIM, deixe a linha 2 vazia."
     )
