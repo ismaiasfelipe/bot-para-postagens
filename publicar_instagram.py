@@ -13,6 +13,15 @@ Pagina do Facebook) para:
    publica, nao upload direto de arquivo. Use upload_storage.py pra
    subir os slides gerados e obter essas URLs antes de chamar isso.
 4. Publicar uma imagem unica (publicar_imagem_unica)
+5. Publicar um Story (publicar_story) -- mesmo fluxo de container da
+   imagem unica, so troca media_type pra "STORIES". Sem app review
+   adicional: a permissao instagram_content_publish que ja libera
+   carrossel/imagem cobre Stories tambem. Duas limitacoes da API (nao
+   tem solucao via codigo):
+   - Nao renderiza "caption" em Stories -- todo texto tem que estar
+     desenhado na propria imagem antes de publicar.
+   - Nao da pra inserir sticker nativo (enquete, caixinha de pergunta)
+     por essa API -- isso so da pra fazer manualmente, direto no app.
 
 Fluxo interno de publicacao de carrossel (exigido pela API):
 1. Criar um "media container" pra cada imagem (is_carousel_item=true)
@@ -164,6 +173,41 @@ def publicar_carrossel(urls_imagens, legenda):
     dados = resp.json()
     if resp.status_code != 200:
         raise RuntimeError(f"Erro ao publicar carrossel: {dados}")
+    return dados["id"]
+
+
+def publicar_story(url_imagem):
+    """
+    Publica uma imagem unica como Story (expira em 24h).
+    url_imagem: URL publica da imagem, ja gerada em formato retrato
+    (9:16 -- 1080x1920) -- a API nao recorta/ajusta proporcao sozinha.
+    Sem legenda: a API do Instagram nao renderiza caption em Stories,
+    entao qualquer texto precisa ja estar desenhado na propria imagem
+    (mesma logica de overlay de texto usada no carrossel).
+    Retorna o ID da publicacao criada.
+    """
+    _checar_credenciais()
+    resp = requests.post(
+        f"{GRAPH_BASE}/{IG_USER_ID}/media",
+        data={
+            "image_url": url_imagem,
+            "media_type": "STORIES",
+            "access_token": IG_ACCESS_TOKEN,
+        },
+    )
+    dados = resp.json()
+    if resp.status_code != 200:
+        raise RuntimeError(f"Erro ao criar container de story: {dados}")
+    container_id = dados["id"]
+    _aguardar_container_pronto(container_id)
+
+    resp = requests.post(
+        f"{GRAPH_BASE}/{IG_USER_ID}/media_publish",
+        data={"creation_id": container_id, "access_token": IG_ACCESS_TOKEN},
+    )
+    dados = resp.json()
+    if resp.status_code != 200:
+        raise RuntimeError(f"Erro ao publicar story: {dados}")
     return dados["id"]
 
 
