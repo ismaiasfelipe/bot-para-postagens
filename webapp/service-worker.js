@@ -1,8 +1,15 @@
 // Service worker minimo: so cacheia o "shell" do app (HTML/CSS/JS/icones)
 // pra instalar/abrir rapido. Chamadas pra api.github.com NUNCA passam
 // pelo cache (precisam de dado fresco e vao com o token de autenticacao).
-
-const CACHE = "il-painel-v1";
+//
+// IMPORTANTE: o fetch handler abaixo e "cache-first" -- uma vez
+// instalado, o navegador serve o shell cacheado pra sempre, mesmo apos
+// varios reloads/deploys novos, ate o proprio service-worker.js mudar
+// de bytes (isso e o que faz o navegador instalar uma versao nova). Por
+// isso: TROQUE o numero da versao abaixo (v2 -> v3 -> ...) toda vez que
+// mudar qualquer arquivo em ARQUIVOS_SHELL, senao o usuario continua
+// vendo a versao antiga indefinidamente.
+const CACHE = "il-painel-v2";
 const ARQUIVOS_SHELL = [
   "./",
   "index.html",
