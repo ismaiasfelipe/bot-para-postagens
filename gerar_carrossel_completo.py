@@ -46,6 +46,8 @@ from montar_carrossel_campanha import (
     montar_slide_zoom_cheio,
     montar_slide_duas_fotos,
     montar_slide_grid_numerado,
+    montar_slide_duas_fotos_sobrepostas,
+    montar_slide_circulo_organico,
     ROXO_NOBRE,
     ROSA_QUARTZO,
     OFF_WHITE,
@@ -172,8 +174,13 @@ def _construir_kit_combo(produto, pasta_saida, foto_principal, produto_extra):
 
 def _construir_promocao_relampago(produto, pasta_saida, foto_principal, data_promocao, condicao):
     s = _slide_paths(pasta_saida)
-    montar_slide_texto("Promoção Relâmpago", f"{data_promocao} -- corre que é por tempo limitado", s[0], foto_fundo=foto_principal)
-    montar_slide_hero(foto_principal, produto["nome"], s[1], badge_linha1="PROMOÇÃO", badge_linha2=data_promocao)
+    foto_secundaria = produto.get("imagem_estampa") or foto_principal
+    montar_slide_duas_fotos_sobrepostas(
+        foto_principal, foto_secundaria,
+        "Promoção Relâmpago", f"{data_promocao} -- corre que é por tempo limitado",
+        s[0],
+    )
+    montar_slide_circulo_organico(foto_principal, produto["nome"], s[1])
     montar_post(foto_principal, condicao, "", s[2], logo_estilo="nenhum")
     montar_slide_texto("Corre que é por tempo limitado!", "Chame no direct e garanta o seu!", s[3], cor_fundo=ROSA_QUARTZO, cor_texto=OFF_WHITE, cor_destaque=ROXO_NOBRE)
     return s
