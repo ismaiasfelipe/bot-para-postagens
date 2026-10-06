@@ -44,6 +44,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from gerar_carrossel_completo import extrair_itens_inclusos
+
 load_dotenv()
 
 # --- Configuracao ---
@@ -543,7 +545,25 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
     Criterio 3 (enquadramento/zoom) adicionado depois -- closes muito
     aproximados na intencao de mostrar a estampa estavam saindo
     distorcidos (ver filtro pedido pelo usuario).
+
+    Criterios 4 (texto/legenda vazando da referencia) e 5 (quantidade de
+    pecas) adicionados em 06/10/2026 depois de detectar, no processo de
+    composicao em ambiente, uma foto final com a etiqueta "Estampa 2" da
+    foto de referencia vazando pro resultado, e outra com 4 fronhas em
+    vez do par (2) que a ficha tecnica real indica.
     """
+    itens = extrair_itens_inclusos(produto.get("descricao_tecnica", ""))
+    instrucao_itens = (
+        f"5. A quantidade de cada peca na IMAGEM 1 bate com a ficha "
+        f"tecnica real do produto ({'; '.join(itens)})? So REPROVE aqui "
+        "se voce CONSEGUE CONTAR com clareza um numero errado de pecas "
+        "(ex: 4 fronhas claramente separadas e visiveis, quando a ficha "
+        "indica um par -- 2 fronhas). Na duvida, ou se as pecas estao "
+        "parcialmente sobrepostas/dificeis de contar com certeza, "
+        "considere que passou.\n\n"
+        if itens else "\n"
+    )
+    n_criterios = "cinco" if itens else "quatro"
     return (
         f"Voce e um revisor de qualidade de fotos de produto para "
         f"e-commerce de enxovais. O produto e '{produto['nome']}' "
@@ -564,10 +584,18 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
         "tao aproximado na estampa que distorce o padrao do tecido ou "
         "deixa irreconhecivel o que e o produto, nem tao afastado que o "
         "produto fique pequeno demais na cena? Um corte exagerado demais "
-        "deve ser REPROVADO.\n\n"
+        "deve ser REPROVADO.\n"
+        "4. A IMAGEM 1 esta livre de texto/legenda/etiqueta/selo/marca "
+        "d'agua CLARAMENTE LEGIVEL sobreposto a cena (ex: uma caixa de "
+        "texto tipo 'Estampa 1'/'Estampa 2' vazada das referencias)? So "
+        "REPROVE se houver letras ou numeros realmente legiveis "
+        "sobrepostos a foto -- padrao decorativo do tecido, reflexo ou "
+        "textura NAO conta como texto.\n"
+        f"{instrucao_itens}"
         "Responda EXATAMENTE nesse formato, sem mais nada:\n"
-        "LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
-        "'NAO' se reprovada por qualquer um dos tres motivos acima.\n"
+        f"LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
+        f"'NAO' se reprovada por qualquer um dos {n_criterios} motivos "
+        "acima.\n"
         "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
         "poder corrigir). Se SIM, deixe a linha 2 vazia."
     )
@@ -620,16 +648,30 @@ def montar_prompt_composicao_ambiente(produto: dict) -> str:
         if medidas_aberto else ""
     )
 
+    itens = extrair_itens_inclusos(produto.get("descricao_tecnica", ""))
+    instrucao_itens = (
+        f"\n\nITENS REAIS INCLUSOS NESSE PRODUTO, EXATAMENTE nessa "
+        f"quantidade -- CONTE as pecas na imagem final antes de terminar "
+        f"e confira que bate exatamente (NAO duplique nem invente pecas "
+        f"extras -- ex: se o produto tem 02 Fronhas (= 1 PAR = 2 "
+        f"travesseiros no total, nao 4), gere exatamente 2 travesseiros "
+        f"na cama, nunca 4): "
+        + "; ".join(itens) + "."
+        if itens else ""
+    )
+
     return (
         f"Voce recebeu 3 fotos de referencia do produto '{produto['nome']}' "
         f"({produto['categoria']}) de uma loja de enxovais.{contexto_produto}"
-        f"{instrucao_medidas}\n\n"
+        f"{instrucao_medidas}{instrucao_itens}\n\n"
         "IMAGEM 1 e IMAGEM 2: fotos reais do produto (podem ter diagrama de "
-        "medidas, setas, etiquetas ou closes de amostra de tecido "
-        "sobrepostos -- IGNORE completamente essas marcacoes). Use-as SO "
-        "como referencia fiel de padrao/cor/textura do tecido e de como o "
-        "produto se comporta quando posto em uso (escala, caimento, "
-        "formato) -- NAO use o comodo/cenario delas.\n"
+        "medidas, setas, etiquetas tipo 'Estampa 1'/'Estampa 2', ou closes "
+        "de amostra de tecido sobrepostos -- IGNORE completamente essas "
+        "marcacoes, elas NAO podem aparecer, nem de forma alterada, na "
+        "imagem final). Use-as SO como referencia fiel de padrao/cor/"
+        "textura do tecido e de como o produto se comporta quando posto "
+        "em uso (escala, caimento, formato) -- NAO use o comodo/cenario "
+        "delas.\n"
         "IMAGEM 3: foto de um comodo real, limpo, SEM o produto -- essa E "
         "a cena-base que voce deve usar para a foto final.\n\n"
         "Gere uma nova fotografia realista mostrando ESSE PRODUTO (fiel ao "
@@ -645,13 +687,25 @@ def montar_prompt_composicao_ambiente(produto: dict) -> str:
         "-- nao reinterprete, redesenhe ou varie o tamanho do motivo, "
         "preserve os tracos finos (contorno, folhas, linhas) exatamente "
         "como aparecem nas imagens de referencia;\n"
-        "(b) NAO mude nada da cena da IMAGEM 3 alem de inserir o produto "
+        "(b) SE O PRODUTO TIVER MAIS DE UM TECIDO/ESTAMPA (ex: uma cor "
+        "lisa na barra/babado/acabamento e um padrao floral/estampado no "
+        "corpo principal, como costuma aparecer nas referencias): respeite "
+        "EXATAMENTE qual parte de cada peca leva qual tecido, igual nas "
+        "referencias -- nao deixe o padrao estampado 'vazar' ou se "
+        "sobrepor a area do tecido liso (ou vice-versa). Se houver mais de "
+        "uma peca igual (ex: um par de fronhas), TODAS as pecas do par "
+        "devem usar a MESMA combinacao de tecidos, na MESMA posicao -- "
+        "nao varie a composicao entre uma peca e outra;\n"
+        "(c) NAO mude nada da cena da IMAGEM 3 alem de inserir o produto "
         "-- mesmos moveis, mesma parede, mesma iluminacao, mesmo angulo;\n"
-        "(c) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
+        "(d) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
         "inteiro da cena, SEM nenhuma seta, caixa de texto, legenda, linha "
         "ou numero de medida, e SEM nenhum close/inset separado de "
         "amostra de tecido (nao monte colagem/grade de varias fotos);\n"
-        "(d) sem pessoas, sem logotipo, sem texto.\n"
+        "(e) sem pessoas, sem logotipo, sem NENHUM texto -- incluindo "
+        "qualquer etiqueta/selo tipo 'Estampa 1' ou 'Estampa 2' que "
+        "apareca nas imagens 1 ou 2, isso e so pra uso interno de "
+        "referencia e nao pode vazar pra imagem final de jeito nenhum.\n"
         "Proporcao quadrada, adequada para post de Instagram."
     )
 
