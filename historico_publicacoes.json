@@ -8,7 +8,20 @@
     "story_ids": [
       "17888929680479260",
       "17892646974681842"
-    ]
+    ],
+    "metricas_stories": {
+      "17888929680479260": {
+        "reach": 10,
+        "replies": 0,
+        "navigation": 10
+      },
+      "17892646974681842": {
+        "reach": 8,
+        "replies": 0,
+        "navigation": 7
+      }
+    },
+    "metricas_atualizadas_em": "2026-10-06"
   },
   {
     "data": "2026-10-06",
@@ -19,6 +32,27 @@
     "story_ids": [
       "18021620741947625",
       "18013233359966711"
-    ]
+    ],
+    "metricas": {
+      "reach": 1,
+      "likes": 0,
+      "comments": 0,
+      "saved": 0,
+      "shares": 0,
+      "total_interactions": 0
+    },
+    "metricas_stories": {
+      "18021620741947625": {
+        "reach": 0,
+        "replies": 0,
+        "navigation": 0
+      },
+      "18013233359966711": {
+        "reach": 0,
+        "replies": 0,
+        "navigation": 0
+      }
+    },
+    "metricas_atualizadas_em": "2026-10-06"
   }
 ]
