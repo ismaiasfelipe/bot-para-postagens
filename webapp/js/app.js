@@ -55,6 +55,10 @@ function configurarNavegacao() {
 function mostrarApp() {
   document.getElementById("tela-setup").classList.remove("ativo");
   document.getElementById("app-principal").classList.add("ativo");
+  // so agora da pra chamar a API (precisa do token configurado) --
+  // ver configurarFormDefinirPostagens, que so monta o HTML estatico.
+  _montarGrupoProdutos();
+  _atualizarBadgeStatusSemana();
 }
 
 function mostrarSetup(vindoDoApp = false) {
@@ -106,40 +110,237 @@ function configurarTelaSetup() {
 }
 
 // --- Aba "Definir postagens" -------------------------------------------
+//
+// Formulario com selecao multipla (campanha/padrao/categoria/produto),
+// linguagem (tom de voz) e dia de preco -- escreve tema_semana.json
+// direto pela API do GitHub (ver github-api.js escreverArquivoRepo),
+// sem passar pelo workflow_dispatch antigo (so aceitava 1 valor por
+// campo). Formato do JSON tem que bater com tema_semana.py (backend).
+
+function _criarCheckbox(grupo, nome, valor, rotulo, marcadoPorPadrao, aviso) {
+  const label = document.createElement("label");
+  label.className = "opcao-checkbox";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.name = nome;
+  input.value = valor;
+  input.checked = !!marcadoPorPadrao;
+  label.appendChild(input);
+  label.appendChild(document.createTextNode(" " + rotulo));
+  if (aviso) {
+    const spanAviso = document.createElement("span");
+    spanAviso.className = "aviso-inline";
+    spanAviso.textContent = " ⚠ pode exigir checagem manual do resultado";
+    label.appendChild(spanAviso);
+  }
+  grupo.appendChild(label);
+  return input;
+}
+
+function _criarRadio(grupo, nome, valor, rotulo, marcadoPorPadrao) {
+  const label = document.createElement("label");
+  label.className = "opcao-checkbox";
+  const input = document.createElement("input");
+  input.type = "radio";
+  input.name = nome;
+  input.value = valor;
+  input.checked = !!marcadoPorPadrao;
+  label.appendChild(input);
+  label.appendChild(document.createTextNode(" " + rotulo));
+  grupo.appendChild(label);
+  return input;
+}
+
+function _valoresMarcados(nomeGrupo) {
+  return Array.from(document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`)).map((i) => i.value);
+}
+
+async function _montarGrupoProdutos() {
+  const grupo = document.getElementById("grupo-produtos");
+  try {
+    const texto = await lerArquivoRepo("produtos_reais.json");
+    const banco = JSON.parse(texto);
+    grupo.innerHTML = "";
+    banco.produtos.forEach((p) => {
+      _criarCheckbox(grupo, "produto", p.id, `${p.nome} (${p.categoria})`, false, false);
+    });
+    if (banco.produtos.length === 0) {
+      grupo.innerHTML = '<p class="vazio">Nenhum produto no catálogo ainda.</p>';
+    }
+  } catch {
+    grupo.innerHTML = '<p class="status erro">Não consegui carregar a lista de produtos.</p>';
+  }
+}
+
+function _calcularStatusSemana(definidoEm) {
+  const hoje = new Date();
+  const diaSemana = hoje.getDay(); // 0=domingo .. 6=sabado
+  const diasDesdeSabado = (diaSemana + 1) % 7;
+  const anchorSabado = new Date(hoje);
+  anchorSabado.setDate(hoje.getDate() - diasDesdeSabado);
+  anchorSabado.setHours(0, 0, 0, 0);
+
+  const definido = definidoEm ? new Date(definidoEm + "T00:00:00") : null;
+  if (definido && definido >= anchorSabado) {
+    return { cor: "ok", texto: "Tema desta semana já definido" };
+  }
+  if (diaSemana === 6) {
+    return { cor: "amarelo", texto: "Hoje é sábado — defina o tema da próxima semana" };
+  }
+  return { cor: "vermelho", texto: "Atrasado! Defina o tema da semana" };
+}
+
+async function _atualizarBadgeStatusSemana() {
+  const badge = document.getElementById("status-semana-badge");
+  const detalhe = document.getElementById("status-semana-detalhe");
+  try {
+    const texto = await lerArquivoRepo("tema_semana.json");
+    const tema = JSON.parse(texto);
+    const statusCalc = _calcularStatusSemana(tema.definido_em);
+    badge.className = `badge-status badge-${statusCalc.cor}`;
+    detalhe.textContent = statusCalc.texto;
+  } catch {
+    const statusCalc = _calcularStatusSemana(null);
+    badge.className = `badge-status badge-${statusCalc.cor}`;
+    detalhe.textContent = statusCalc.texto;
+  }
+}
+
+/** Verifica divergencias simples antes de salvar (ver especificacao: "continuar assim mesmo"). */
+async function _validarSelecao(selecao) {
+  const avisos = [];
+
+  if (selecao.padroes.some((p) => PADROES.find((x) => x.chave === p)?.aviso)) {
+    avisos.push(
+      "Cross-sell e Estilo de vida/Inspiração usam formatos que podem precisar de várias fotos de produtos diferentes -- o bot tenta montar sozinho, mas o resultado pode variar mais. Vale conferir antes de publicar."
+    );
+  }
+
+  if (selecao.produtos_ids.length > 0) {
+    try {
+      const texto = await lerArquivoRepo("produtos_reais.json");
+      const banco = JSON.parse(texto);
+      selecao.produtos_ids.forEach((id) => {
+        const produto = banco.produtos.find((p) => p.id === id);
+        if (!produto) {
+          avisos.push(`Produto ${id} não foi encontrado no catálogo.`);
+        } else if (!produto.imagem_ambiente && !produto.imagem_estampa) {
+          avisos.push(`"${produto.nome}" ainda não tem nenhuma foto cadastrada -- a publicação pode falhar.`);
+        }
+      });
+    } catch {
+      avisos.push("Não consegui checar o catálogo de produtos agora -- a verificação ficou incompleta.");
+    }
+  }
+
+  if (selecao.preco_dia) {
+    avisos.push(
+      "A ficha técnica ainda não tem o campo de preço preenchido pra nenhum produto -- até isso ser adicionado, o preço não vai aparecer mesmo com essa opção marcada."
+    );
+  }
+
+  return avisos;
+}
+
+function _lerSelecaoFormulario() {
+  const campanhas = _valoresMarcados("campanha");
+  const linguagem = document.querySelector('input[name="linguagem"]:checked')?.value || "neutra";
+  const padroes = _valoresMarcados("padrao");
+  const categorias_foco = _valoresMarcados("categoria");
+  const produtos_ids = _valoresMarcados("produto");
+  const preco_dia = document.querySelector('input[name="preco"]:checked')?.value || "";
+  return {
+    campanhas_chaves: campanhas.length ? campanhas : null,
+    linguagem,
+    padroes: padroes.length ? padroes : null,
+    categorias_foco: categorias_foco.length ? categorias_foco : null,
+    produtos_ids: produtos_ids.length ? produtos_ids : null,
+    preco_dia: preco_dia || null,
+  };
+}
+
+async function _salvarTemaSemana(selecao) {
+  const definido_em = new Date().toISOString().slice(0, 10);
+  const tema = { definido_em, ...selecao };
+  await escreverArquivoRepo(
+    "tema_semana.json",
+    JSON.stringify(tema, null, 2) + "\n",
+    "Define tema da semana (via painel)"
+  );
+  return tema;
+}
 
 function configurarFormDefinirPostagens() {
-  const selectCampanha = document.getElementById("select-campanha");
-  CAMPANHAS.forEach((c) => {
-    const opcao = document.createElement("option");
-    opcao.value = c.chave;
-    opcao.textContent = c.nome;
-    selectCampanha.appendChild(opcao);
+  const grupoCampanhas = document.getElementById("grupo-campanhas");
+  _criarCheckbox(grupoCampanhas, "campanha", CAMPANHA_PADRAO_MARCA, "Padrão da marca", true, false);
+  CAMPANHAS.forEach((c) => _criarCheckbox(grupoCampanhas, "campanha", c.chave, c.nome, false, false));
+
+  const grupoLinguagem = document.getElementById("grupo-linguagem");
+  LINGUAGENS.forEach((l) => _criarRadio(grupoLinguagem, "linguagem", l.chave, l.nome, l.chave === "neutra"));
+
+  const grupoPadroes = document.getElementById("grupo-padroes");
+  PADROES.forEach((p) => _criarCheckbox(grupoPadroes, "padrao", p.chave, p.nome, false, p.aviso));
+
+  const grupoCategorias = document.getElementById("grupo-categorias");
+  CATEGORIAS.forEach((cat) => _criarCheckbox(grupoCategorias, "categoria", cat, cat, false, false));
+
+  const grupoPreco = document.getElementById("grupo-preco");
+  _criarRadio(grupoPreco, "preco", "", "Sem preço", true);
+  DIAS_SEMANA.forEach((d) =>
+    _criarRadio(grupoPreco, "preco", d.chave, `Carrossel + story com preço (${d.nome})`, false)
+  );
+
+  const form = document.getElementById("form-definir-postagens");
+  document.getElementById("btn-status-semana").addEventListener("click", () => {
+    const aberto = form.style.display !== "none";
+    form.style.display = aberto ? "none" : "flex";
+  });
+  document.getElementById("btn-cancelar-form-postagens").addEventListener("click", () => {
+    form.style.display = "none";
   });
 
-  const selectCategoria = document.getElementById("select-categoria");
-  CATEGORIAS.forEach((cat) => {
-    const opcao = document.createElement("option");
-    opcao.value = cat;
-    opcao.textContent = cat;
-    selectCategoria.appendChild(opcao);
-  });
-
-  document.getElementById("form-definir-postagens").addEventListener("submit", async (evento) => {
+  form.addEventListener("submit", async (evento) => {
     evento.preventDefault();
     const status = document.getElementById("definir-status");
-    const campanha = selectCampanha.value;
-    const categoria = selectCategoria.value;
-    const produto = document.getElementById("input-produto").value.trim();
+    const divDivergencias = document.getElementById("avisos-divergencia");
+    const selecao = _lerSelecaoFormulario();
 
-    status.textContent = "Enviando pro GitHub Actions...";
+    status.textContent = "Verificando os dados...";
     status.className = "status";
+    divDivergencias.style.display = "none";
+
+    const avisos = await _validarSelecao(selecao);
+    if (avisos.length > 0 && !form.dataset.ignorarAvisos) {
+      divDivergencias.innerHTML =
+        "<strong>Encontrei umas divergências:</strong><ul>" +
+        avisos.map((a) => `<li>${escapeHtml(a)}</li>`).join("") +
+        "</ul>";
+      divDivergencias.style.display = "block";
+      status.textContent = "Confira os avisos acima antes de continuar.";
+      status.className = "status";
+      const botaoContinuar = document.createElement("button");
+      botaoContinuar.type = "button";
+      botaoContinuar.className = "botao-perigo";
+      botaoContinuar.textContent = "Continuar assim mesmo";
+      botaoContinuar.addEventListener("click", async () => {
+        form.dataset.ignorarAvisos = "1";
+        form.requestSubmit();
+      });
+      divDivergencias.appendChild(botaoContinuar);
+      return;
+    }
+    delete form.dataset.ignorarAvisos;
+
+    status.textContent = "Salvando tema da semana...";
     try {
-      await dispararWorkflow("definir_tema.yml", { campanha, categoria, produto });
+      await _salvarTemaSemana(selecao);
       status.textContent =
-        "Tema da semana enviado! O pipeline diário (seg-sáb, 7h) vai usar essa escolha a partir da próxima publicação.";
+        "Tema da semana salvo! O pipeline diário (seg-sáb, 7h) vai usar essa escolha a partir da próxima publicação.";
       status.className = "status sucesso";
+      form.style.display = "none";
+      _atualizarBadgeStatusSemana();
     } catch (erro) {
-      status.textContent = `Não consegui enviar: ${erro.message}`;
+      status.textContent = `Não consegui salvar: ${erro.message}`;
       status.className = "status erro";
     }
   });

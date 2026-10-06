@@ -91,6 +91,45 @@ async function listarExecucoes(arquivoWorkflow, porPagina = 5) {
   return dados.workflow_runs || [];
 }
 
+/**
+ * Escreve (cria ou atualiza) um arquivo de texto do repo direto pela API
+ * Contents -- usado pra salvar tema_semana.json sem passar pelo
+ * workflow_dispatch de definir_tema.yml (que so aceitava campos com 1
+ * valor cada, nao a selecao multipla do formulario novo). Precisa que o
+ * token tenha permissao "Contents: Read and write" (antes bastava
+ * "Read-only" so pra ler o historico -- se o app passar a dar erro 403
+ * salvando o tema, o token precisa ser atualizado com essa permissao).
+ */
+async function escreverArquivoRepo(caminhoArquivo, conteudoTexto, mensagemCommit) {
+  const config = carregarConfig();
+  let shaAtual;
+  try {
+    const respostaLeitura = await _chamarGitHub(
+      `/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(caminhoArquivo)}?ref=${config.branch || "main"}`
+    );
+    shaAtual = (await respostaLeitura.json()).sha;
+  } catch {
+    shaAtual = undefined; // arquivo ainda nao existe -- cria novo
+  }
+
+  const bytesUtf8 = new TextEncoder().encode(conteudoTexto);
+  const binario = String.fromCharCode(...bytesUtf8);
+  const conteudoBase64 = btoa(binario);
+
+  await _chamarGitHub(
+    `/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(caminhoArquivo)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        message: mensagemCommit,
+        content: conteudoBase64,
+        branch: config.branch || "main",
+        ...(shaAtual ? { sha: shaAtual } : {}),
+      }),
+    }
+  );
+}
+
 /** Confirma que o token funciona e tem acesso ao repo (pra validar na tela de config). */
 async function testarAcesso() {
   const config = carregarConfig();

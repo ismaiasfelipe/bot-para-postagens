@@ -28,3 +28,32 @@ const CAMPANHAS = [
 ];
 
 const CATEGORIAS = ["Cama", "Banho", "Mesa", "Sofá", "Infantil"];
+
+const CAMPANHA_PADRAO_MARCA = "__padrao_marca__";
+
+const LINGUAGENS = [
+  { chave: "neutra", nome: "Neutra" },
+  { chave: "acolhedora", nome: "Acolhedora" },
+  { chave: "chamativa", nome: "Chamativa" },
+  { chave: "agressiva", nome: "Agressiva" },
+];
+
+// aviso: true nos padroes que ainda exigem montagem automatica mais
+// arriscada (varias fotos/produtos por slide) -- ver
+// calendario_campanhas.MAPEAMENTO_PADRAO_FORMATOS no backend.
+const PADROES = [
+  { chave: "apresentacao_produto", nome: "Apresentação de produto", aviso: false },
+  { chave: "promocao", nome: "Promoção", aviso: false },
+  { chave: "cross_sell", nome: "Cross-sell", aviso: true },
+  { chave: "estilo_vida", nome: "Estilo de vida / Inspiração", aviso: true },
+];
+
+const DIAS_SEMANA = [
+  { chave: "segunda", nome: "Segunda-feira" },
+  { chave: "terca", nome: "Terça-feira" },
+  { chave: "quarta", nome: "Quarta-feira" },
+  { chave: "quinta", nome: "Quinta-feira" },
+  { chave: "sexta", nome: "Sexta-feira" },
+  { chave: "sabado", nome: "Sábado" },
+  { chave: "todos", nome: "Todos os dias" },
+];

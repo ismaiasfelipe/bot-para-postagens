@@ -172,6 +172,70 @@ input:focus, select:focus {
 
 .aba-intro { color: var(--cinza-texto); font-size: 0.9rem; margin: 0 0 14px; }
 
+/* --- Status da semana / formulario de definir postagens --- */
+
+.botao-status-semana {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border: none;
+  border-radius: 14px;
+  background: var(--roxo-nobre);
+  color: var(--off-white);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.badge-status {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #9b8e95;
+  flex-shrink: 0;
+}
+.badge-status.badge-ok { background: var(--verde); }
+.badge-status.badge-amarelo { background: #d9a441; }
+.badge-status.badge-vermelho { background: var(--vermelho); }
+
+.form-postagens { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+
+.grupo-checkbox, .grupo-radio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.opcao-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: var(--roxo-nobre);
+  padding: 6px 2px;
+  margin-top: 0;
+}
+.opcao-checkbox input { margin: 0; }
+
+.aviso-inline { color: var(--vermelho); font-size: 0.8rem; }
+
+.avisos-divergencia {
+  background: #fff6e8;
+  border: 1.5px solid #d9a441;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: var(--roxo-nobre);
+  margin: 10px 0;
+}
+.avisos-divergencia ul { margin: 6px 0 10px; padding-left: 20px; }
+.avisos-divergencia button { margin-top: 4px; }
+
 .aba-nav {
   position: fixed;
   bottom: 0;

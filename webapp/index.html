@@ -64,28 +64,40 @@
     <main class="conteudo">
 
       <section id="aba-postagens" class="aba-conteudo ativo">
-        <h2>Definir postagens</h2>
-        <p class="aba-intro">
-          Escolha o tema da semana (o mesmo que o workflow "Definir tema da
-          semana" no GitHub) — o pipeline diário (seg-sáb, 7h) vai usar essa
-          escolha a partir da próxima publicação.
-        </p>
+        <button type="button" id="btn-status-semana" class="botao-status-semana">
+          <span id="status-semana-texto">Definir postagens</span>
+          <span id="status-semana-badge" class="badge-status"></span>
+        </button>
+        <p id="status-semana-detalhe" class="aba-intro"></p>
 
-        <form id="form-definir-postagens">
-          <label for="select-campanha">Campanha</label>
-          <select id="select-campanha">
-            <option value="">Automático (pelo calendário)</option>
-          </select>
+        <form id="form-definir-postagens" class="form-postagens" style="display:none">
+          <h3>Campanha</h3>
+          <p class="aba-intro">Pode marcar mais de uma — o bot sorteia entre as marcadas a cada publicação.</p>
+          <div id="grupo-campanhas" class="grupo-checkbox"></div>
 
-          <label for="select-categoria">Categoria em foco (opcional, sem campanha específica)</label>
-          <select id="select-categoria">
-            <option value="">—</option>
-          </select>
+          <h3>Linguagem</h3>
+          <div id="grupo-linguagem" class="grupo-radio"></div>
 
-          <label for="input-produto">Forçar 1 produto específico (ID, opcional)</label>
-          <input type="text" id="input-produto" placeholder="ex: p009" />
+          <h3>Padrão</h3>
+          <p class="aba-intro">Pode marcar mais de um.</p>
+          <div id="grupo-padroes" class="grupo-checkbox"></div>
 
-          <button type="submit" class="botao-principal">Salvar tema da semana</button>
+          <h3>Produtos</h3>
+          <p class="aba-intro">Categoria (opcional, pode marcar mais de uma)</p>
+          <div id="grupo-categorias" class="grupo-checkbox"></div>
+          <p class="aba-intro">Produto específico (opcional, pode marcar mais de um)</p>
+          <div id="grupo-produtos" class="grupo-checkbox">
+            <p class="carregando">Carregando produtos...</p>
+          </div>
+
+          <h3>Preço</h3>
+          <p class="aba-intro">Mostra o preço (da ficha técnica) no carrossel e num story extra.</p>
+          <div id="grupo-preco" class="grupo-radio"></div>
+
+          <div id="avisos-divergencia" class="avisos-divergencia" style="display:none"></div>
+
+          <button type="submit" class="botao-principal">Concluir</button>
+          <button type="button" id="btn-cancelar-form-postagens" class="botao-secundario">Cancelar</button>
         </form>
         <p id="definir-status" class="status"></p>
 
