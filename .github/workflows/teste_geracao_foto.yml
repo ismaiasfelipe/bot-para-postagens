@@ -1,0 +1,54 @@
+name: Teste manual de geracao de foto
+
+# Workflow descartavel pra testar gerar_foto_hero_com_verificacao() num
+# produto especifico, sem publicar no Instagram nem commitar nada --
+# so sobe o resultado como artifact pra conferir visualmente. Usado pra
+# validar mudancas de prompt (ver gerar_carrossel_gemini.py) antes de
+# deixar elas rodarem no pipeline de verdade.
+on:
+  workflow_dispatch:
+    inputs:
+      produto_id:
+        description: "ID do produto em produtos_reais.json (ex: p010)"
+        required: true
+        default: "p010"
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install python-dotenv google-genai
+
+      - name: Gerar foto de teste
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 -c "
+          import json
+          from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao
+
+          with open('produtos_reais.json') as f:
+              banco = json.load(f)
+          produto_id = '${{ inputs.produto_id }}'
+          produto = next(p for p in banco['produtos'] if p['id'] == produto_id)
+          print('Testando produto:', produto['nome'])
+          print('imagem_ambiente:', produto.get('imagem_ambiente'))
+          print('imagem_estampa:', produto.get('imagem_estampa'))
+
+          caminho = gerar_foto_hero_com_verificacao(produto, nome_arquivo=f'teste_{produto_id}')
+          print('RESULTADO:', caminho)
+          "
+
+      - name: Subir resultado como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teste-foto-${{ inputs.produto_id }}
+          path: saida/teste_*
+          retention-days: 7
