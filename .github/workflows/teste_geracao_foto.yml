@@ -24,26 +24,45 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar dependencias
-        run: pip install python-dotenv google-genai
+        run: pip install python-dotenv google-genai Pillow
 
-      - name: Gerar foto de teste
+      - name: Gerar foto de teste (com diagnostico)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python3 -c "
-          import json
-          from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao
+          import json, os
+          from gerar_carrossel_gemini import (
+              montar_prompt_edicao, _gerar_e_retornar_caminho, verificar_foto_hero,
+          )
 
           with open('produtos_reais.json') as f:
               banco = json.load(f)
           produto_id = '${{ inputs.produto_id }}'
           produto = next(p for p in banco['produtos'] if p['id'] == produto_id)
           print('Testando produto:', produto['nome'])
-          print('imagem_ambiente:', produto.get('imagem_ambiente'))
-          print('imagem_estampa:', produto.get('imagem_estampa'))
+          referencias = [c for c in (produto.get('imagem_ambiente'), produto.get('imagem_estampa')) if c]
+          print('referencias:', referencias)
 
-          caminho = gerar_foto_hero_com_verificacao(produto, nome_arquivo=f'teste_{produto_id}')
-          print('RESULTADO:', caminho)
+          prompt = montar_prompt_edicao(produto)
+          print('--- PROMPT (primeiros 300 chars) ---')
+          print(prompt[:300])
+
+          caminho = _gerar_e_retornar_caminho(prompt, referencias, f'teste_{produto_id}')
+          print('CAMINHO GERADO:', caminho)
+          if caminho:
+              tamanho = os.path.getsize(caminho)
+              print('TAMANHO DO ARQUIVO (bytes):', tamanho)
+              try:
+                  from PIL import Image
+                  img = Image.open(caminho)
+                  img.verify()
+                  print('IMAGEM VALIDA, dimensoes:', Image.open(caminho).size)
+              except Exception as e:
+                  print('ERRO AO ABRIR IMAGEM:', repr(e))
+
+              passou, motivo = verificar_foto_hero(caminho, referencias, produto)
+              print('VERIFICACAO passou:', passou, '| motivo:', motivo)
           "
 
       - name: Subir resultado como artifact
