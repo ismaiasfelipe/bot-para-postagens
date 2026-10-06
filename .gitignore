@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# Credenciais reais -- NUNCA commitar. Ver .env.example pro formato
+# esperado; credenciais_drive.json e a chave de conta de servico baixada
+# do Google Cloud Console (ver conectar_drive.py, secao CONFIGURACAO).
+.env
+credenciais_drive.json

@@ -49,6 +49,13 @@ CONFIGURACAO NECESSARIA (fazer uma unica vez)
 8. Pegue o ID da pasta raiz "produtos": abra ela no navegador e copie o
    trecho da URL depois de "folders/"
 
+"credenciais_drive.json" fica so local (esta no .gitignore, nunca e
+commitado). Pros workflows do GitHub Actions que tambem precisam dele
+(ver pipeline_diario.yml), cole o CONTEUDO INTEIRO do .json como o
+secret "GOOGLE_SERVICE_ACCOUNT_JSON" em Settings > Secrets and
+variables > Actions > New repository secret -- o workflow recria o
+arquivo a partir desse secret antes de rodar.
+
 COMO RODAR
 ----------
 pip install google-api-python-client google-auth --break-system-packages
