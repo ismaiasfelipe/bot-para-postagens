@@ -59,8 +59,8 @@ from calendario_campanhas import (
 from tema_semana import carregar_tema, CAMPANHA_PADRAO_MARCA
 from gerar_carrossel_gemini import (
     gerar_foto_hero_com_verificacao,
+    gerar_foto_composta_ambiente_com_verificacao,
     gerar_foto_estampa_close_com_verificacao,
-    gerar_foto_ambiente_variacao_com_verificacao,
     gerar_legenda_ia,
     extrair_preco,
 )
@@ -79,6 +79,24 @@ from publicar_instagram import publicar_carrossel, publicar_story
 ARQUIVO_PRODUTOS = "produtos_reais.json"
 ARQUIVO_HISTORICO = "historico_publicacoes.json"
 FORMATOS_SIMPLES_GENERICOS = ["vitrine", "novidade_semana", "detalhe_textura"]
+
+# Biblioteca de fotos de ambiente PRONTAS (comodo real, limpo, sem nenhum
+# produto) baixadas do Drive (pasta "ambientes" em referencias e exemplos)
+# -- ver _escolher_pasta_ambiente/_escolher_foto_ambiente_principal/
+# _escolher_foto_ambiente_variacao. Usada pra compor a foto do produto
+# DENTRO de um desses comodos (gerar_carrossel_gemini.
+# gerar_foto_composta_ambiente_com_verificacao), em vez de so recriar a
+# cena da unica foto de referencia que cada produto tem -- da variedade
+# de ambiente de verdade entre produtos/slides diferentes.
+PASTA_AMBIENTES_REF = Path("ambientes_referencia")
+
+# categoria do catalogo (ver produtos_reais.json) -> nome da subpasta em
+# ambientes_referencia/. "cama (quarto)" e "infantil" sao tratados a parte
+# em _escolher_pasta_ambiente (casal vs solteiro, por palavra no nome).
+PASTA_AMBIENTE_POR_CATEGORIA = {
+    "Banho": "banheiro",
+    "Sofá": "sala_de_estar",
+}
 
 # quantos produtos extras (alem do principal) cada formato multi-foto
 # precisa, pra saber quantos tentar reunir em _obter_produtos_extras
@@ -331,23 +349,125 @@ def _chave_cache_hero(produto: dict) -> str:
     return f"{produto['id']}_{assinatura}"
 
 
+def _escolher_pasta_ambiente(produto: dict) -> str | None:
+    """
+    Decide qual subpasta de ambientes_referencia/ combina com a categoria
+    do produto. "cama (quarto)" e "infantil" variam entre quarto_casal e
+    quarto_solteiro pela PALAVRA no nome do produto (ex: "... casal/box"
+    vs "... solteiro"); infantil cai em quarto_solteiro por padrao (decidido
+    com o usuario em 06/10/2026 -- produtos infantis de cama costumam ser
+    tamanho solteiro, e ainda nao existe uma pasta "quarto infantil"
+    dedicada). "mesa (cozinha)" varia entre cozinha e sala_de_jantar pelo
+    nome (toalha de mesa -> sala de jantar; o resto -> cozinha).
+
+    Retorna None se a categoria nao bater com nenhuma pasta conhecida --
+    o chamador cai pro fallback (gerar_foto_hero_com_verificacao).
+    """
+    categoria = produto["categoria"]
+    nome = produto["nome"].lower()
+
+    if _categoria_bate(categoria, "Cama") or _categoria_bate(categoria, "Infantil"):
+        if _categoria_bate(categoria, "Infantil"):
+            return "quarto_solteiro"
+        return "quarto_solteiro" if "solteiro" in nome else "quarto_casal"
+
+    if _categoria_bate(categoria, "Mesa"):
+        return "sala_de_jantar" if "mesa" in nome else "cozinha"
+
+    for categoria_campanha, pasta in PASTA_AMBIENTE_POR_CATEGORIA.items():
+        if _categoria_bate(categoria, categoria_campanha):
+            return pasta
+
+    return None
+
+
+def _fotos_ambiente_disponiveis(nome_pasta: str) -> list[str]:
+    pasta = PASTA_AMBIENTES_REF / nome_pasta
+    if not pasta.exists():
+        return []
+    return sorted(str(p) for p in pasta.iterdir() if p.is_file())
+
+
+def _indice_estavel(texto: str, modulo: int) -> int:
+    """
+    Indice DETERMINISTICO (nao aleatorio) a partir de um texto -- o mesmo
+    produto sempre escolhe a mesma foto de ambiente principal (cache
+    estavel entre rodadas, sem gastar geracao nova a toa), mas produtos
+    diferentes tendem a cair em indices diferentes da pasta.
+    """
+    return int(hashlib.sha1(texto.encode("utf-8")).hexdigest(), 16) % modulo
+
+
+def _escolher_foto_ambiente_principal(produto: dict) -> str | None:
+    nome_pasta = _escolher_pasta_ambiente(produto)
+    candidatos = _fotos_ambiente_disponiveis(nome_pasta) if nome_pasta else []
+    if not candidatos:
+        return None
+    return candidatos[_indice_estavel(produto["id"], len(candidatos))]
+
+
+def _escolher_foto_ambiente_variacao(produto: dict) -> str | None:
+    """Escolhe uma foto de ambiente DIFERENTE da usada em _escolher_foto_ambiente_principal (mesma pasta)."""
+    nome_pasta = _escolher_pasta_ambiente(produto)
+    candidatos = _fotos_ambiente_disponiveis(nome_pasta) if nome_pasta else []
+    if len(candidatos) < 2:
+        return None
+    indice_principal = _indice_estavel(produto["id"], len(candidatos))
+    indice_variacao = (indice_principal + 1) % len(candidatos)
+    return candidatos[indice_variacao]
+
+
+def _obter_foto_composta(produto: dict, caminho_ambiente: str, sufixo_cache: str) -> str | None:
+    """
+    Reaproveita uma composicao ja verificada em cache_hero/ se existir
+    pra essa mesma combinacao de produto+referencias+foto de ambiente
+    (ver _chave_cache_hero); senao gera via Gemini
+    (gerar_foto_composta_ambiente_com_verificacao) e salva no cache so se
+    aprovada. sufixo_cache distingue a foto principal da variacao no
+    nome do arquivo de cache (duas fotos de ambiente diferentes pro
+    mesmo produto).
+    """
+    pasta_cache = Path("cache_hero")
+    pasta_cache.mkdir(exist_ok=True)
+    assinatura_ambiente = hashlib.sha1(caminho_ambiente.encode("utf-8")).hexdigest()[:8]
+    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_{sufixo_cache}_{assinatura_ambiente}.png"
+    if caminho_cache.exists():
+        return str(caminho_cache)
+
+    aprovado = gerar_foto_composta_ambiente_com_verificacao(
+        produto, caminho_ambiente, nome_arquivo=f"{produto['id']}_{sufixo_cache}"
+    )
+    if aprovado is None:
+        return None
+
+    caminho_cache.write_bytes(Path(aprovado).read_bytes())
+    return str(caminho_cache)
+
+
 def obter_foto_hero(produto: dict) -> str | None:
     """
-    Reaproveita uma foto ja verificada em cache_hero/ se existir pra essa
-    MESMA combinacao de produto+referencias (ver _chave_cache_hero);
-    senao gera uma nova via Gemini COM verificacao automatica de
-    fidelidade (gerar_foto_hero_com_verificacao, com retry) e salva no
-    cache so se aprovada.
+    Foto principal do produto. Forma PRINCIPAL (desde 06/10/2026): compoe
+    o produto (fiel a estampa/ambiente reais) dentro de uma foto de
+    ambiente PRONTA e limpa da biblioteca local (ver
+    _escolher_foto_ambiente_principal/ambientes_referencia/), escolhida
+    pela categoria do produto -- da variedade real de cenario entre
+    produtos diferentes, em vez de sempre recriar a cena da unica foto
+    de referencia que cada produto tem.
 
-    Retorna None se reprovar em todas as tentativas -- o chamador deve
-    pular esse produto, nunca publicar uma foto reprovada.
+    Fallback (gerar_foto_hero_com_verificacao, edita a cena da propria
+    foto de referencia): usado quando a categoria nao bate com nenhuma
+    pasta de ambiente conhecida, ou quando a composicao nao foi aprovada
+    na verificacao de fidelidade.
 
-    Cache separado de saida/ de proposito: os arquivos soltos em saida/
-    (de sessoes anteriores a 03/09/2026) nao passaram por verificacao e
-    alguns saem com cenas genericas sem relacao com o produto real (ver
-    PROJETO.md, "Verificacao de foto hero") -- so o cache novo, com
-    aprovacao confirmada, e reaproveitado automaticamente.
+    Retorna None se reprovar em todas as tentativas (dos dois metodos) --
+    o chamador deve pular esse produto, nunca publicar uma foto reprovada.
     """
+    foto_ambiente = _escolher_foto_ambiente_principal(produto)
+    if foto_ambiente:
+        composta = _obter_foto_composta(produto, foto_ambiente, "hero")
+        if composta:
+            return composta
+
     pasta_cache = Path("cache_hero")
     pasta_cache.mkdir(exist_ok=True)
     caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}.png"
@@ -390,29 +510,21 @@ def obter_foto_estampa_close(produto: dict) -> str | None:
 
 def obter_foto_ambiente_variacao(produto: dict) -> str | None:
     """
-    Reaproveita uma 2a foto de ambiente verificada (angulo/composicao
-    diferente da hero) em cache_hero/ se existir pra essa mesma
-    combinacao de produto+referencias; senao gera via Gemini
-    (gerar_foto_ambiente_variacao_com_verificacao). So usado pelo formato
-    "vitrine" hoje, pra variar os slides em vez de repetir a foto
-    principal em todos (ver montar_dados_formato).
+    2a foto de ambiente do produto, pra variar os slides do formato
+    "vitrine" (ver montar_dados_formato) em vez de repetir a foto
+    principal em todos. Compoe o produto numa foto de ambiente DIFERENTE
+    da usada em obter_foto_hero (mesma pasta/categoria, outra foto da
+    biblioteca -- ver _escolher_foto_ambiente_variacao).
 
-    Retorna None se o produto nao tiver referencia real ou reprovar --
+    Retorna None se a pasta de ambiente da categoria tiver menos de 2
+    fotos (sem uma 2a opcao de verdade), ou se reprovar na verificacao --
     o chamador (_construir_vitrine) cai pra reaproveitar a foto principal
     nesse caso.
     """
-    pasta_cache = Path("cache_hero")
-    pasta_cache.mkdir(exist_ok=True)
-    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_ambiente_var.png"
-    if caminho_cache.exists():
-        return str(caminho_cache)
-
-    aprovado = gerar_foto_ambiente_variacao_com_verificacao(produto)
-    if aprovado is None:
+    foto_ambiente = _escolher_foto_ambiente_variacao(produto)
+    if not foto_ambiente:
         return None
-
-    caminho_cache.write_bytes(Path(aprovado).read_bytes())
-    return str(caminho_cache)
+    return _obter_foto_composta(produto, foto_ambiente, "ambiente_var")
 
 
 def escolher_blocos_stories(historico: list[dict]) -> list:

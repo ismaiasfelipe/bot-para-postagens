@@ -595,6 +595,127 @@ def verificar_foto_hero(imagem_gerada: str, referencias: list[str], produto: dic
     return passou, motivo
 
 
+def montar_prompt_composicao_ambiente(produto: dict) -> str:
+    """
+    Prompt pra compor o produto DENTRO de uma foto de ambiente pronta (da
+    biblioteca local ambientes_referencia/, escolhida por categoria -- ver
+    executar_pipeline_semanal._escolher_foto_ambiente_principal), em vez de
+    recriar a cena da foto de referencia original. Criado em 06/10/2026 a
+    pedido do usuario: usar o processo completo (estampa real + referencia
+    de escala/caimento real + ambiente pre-pronto) em vez de só editar a
+    unica foto de ambiente que cada produto tem.
+
+    3 imagens de referencia esperadas, NESSA ORDEM: (1) foto de estampa ou
+    ambiente real (fidelidade de padrao/cor), (2) foto de ambiente real
+    (escala/caimento -- pode repetir a (1) se so houver uma referencia),
+    (3) foto limpa da biblioteca de ambientes (cena-base).
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    medidas_aberto, _ = extrair_dimensoes(produto.get("descricao_tecnica", ""))
+    instrucao_medidas = (
+        f" Use as medidas reais do produto aberto/em uso ({medidas_aberto}) "
+        "pra manter escala e proporcoes corretas em relacao aos moveis/comodo."
+        if medidas_aberto else ""
+    )
+
+    return (
+        f"Voce recebeu 3 fotos de referencia do produto '{produto['nome']}' "
+        f"({produto['categoria']}) de uma loja de enxovais.{contexto_produto}"
+        f"{instrucao_medidas}\n\n"
+        "IMAGEM 1 e IMAGEM 2: fotos reais do produto (podem ter diagrama de "
+        "medidas, setas, etiquetas ou closes de amostra de tecido "
+        "sobrepostos -- IGNORE completamente essas marcacoes). Use-as SO "
+        "como referencia fiel de padrao/cor/textura do tecido e de como o "
+        "produto se comporta quando posto em uso (escala, caimento, "
+        "formato) -- NAO use o comodo/cenario delas.\n"
+        "IMAGEM 3: foto de um comodo real, limpo, SEM o produto -- essa E "
+        "a cena-base que voce deve usar para a foto final.\n\n"
+        "Gere uma nova fotografia realista mostrando ESSE PRODUTO (fiel ao "
+        "padrao/estampa/cor real das imagens 1 e 2, na escala e caimento "
+        "corretos) colocado/instalado dentro do comodo da IMAGEM 3 -- "
+        "mantendo o comodo, os moveis, a iluminacao e o angulo de camera "
+        "da IMAGEM 3 EXATAMENTE como estao, so adicionando o produto de "
+        "forma realista (ex: a colcha estendida sobre a cama que ja "
+        "aparece na imagem 3, a cortina pendurada na janela que ja aparece "
+        "na cena, o jogo de toalha no suporte do banheiro).\n"
+        "(a) ISSO E CRITICO: o tecido estampado tem um motivo que se "
+        "REPETE em tamanho e espacamento CONSTANTES por toda a superficie "
+        "-- nao reinterprete, redesenhe ou varie o tamanho do motivo, "
+        "preserve os tracos finos (contorno, folhas, linhas) exatamente "
+        "como aparecem nas imagens de referencia;\n"
+        "(b) NAO mude nada da cena da IMAGEM 3 alem de inserir o produto "
+        "-- mesmos moveis, mesma parede, mesma iluminacao, mesmo angulo;\n"
+        "(c) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
+        "inteiro da cena, SEM nenhuma seta, caixa de texto, legenda, linha "
+        "ou numero de medida, e SEM nenhum close/inset separado de "
+        "amostra de tecido (nao monte colagem/grade de varias fotos);\n"
+        "(d) sem pessoas, sem logotipo, sem texto.\n"
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def gerar_foto_composta_ambiente_com_verificacao(
+    produto: dict, caminho_ambiente_base: str, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Gera o produto composto dentro de uma foto de ambiente pronta (ver
+    montar_prompt_composicao_ambiente), com a mesma verificacao de
+    fidelidade e retry das outras geracoes. Essa e a forma PRINCIPAL de
+    gerar a foto do produto agora (ver executar_pipeline_semanal.
+    obter_foto_hero) -- gerar_foto_hero_com_verificacao (edicao da cena
+    original) vira fallback, usado so quando o produto nao tem categoria
+    com pasta de ambiente correspondente ou nenhuma referencia real.
+
+    Retorna None se o produto nao tiver nenhuma referencia real (estampa/
+    ambiente), ou se reprovar em todas as tentativas -- o chamador deve
+    cair pro fallback nesse caso, nunca usar uma imagem reprovada.
+    """
+    referencias_fidelidade = [
+        c for c in (produto.get("imagem_estampa"), produto.get("imagem_ambiente")) if c
+    ]
+    if not referencias_fidelidade:
+        return None
+
+    referencias_geracao = referencias_fidelidade + [caminho_ambiente_base]
+    nome_arquivo = nome_arquivo or f"{produto['id']}_composto"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] compondo {produto['id']} no ambiente...")
+        prompt = montar_prompt_composicao_ambiente(produto)
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias_geracao, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        # Verificacao so com as referencias de FIDELIDADE do produto --
+        # a foto-base do ambiente nao mostra o produto, incluir ela aqui
+        # so confundiria o juiz.
+        passou, motivo = verificar_foto_hero(caminho_atual, referencias_fidelidade, produto)
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: composicao em ambiente de '{produto['id']}' nao passou "
+        f"na verificacao apos {max_tentativas} tentativas -- caindo pro "
+        f"fallback"
+    )
+    return None
+
+
 def gerar_foto_hero_com_verificacao(
     produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
 ) -> str | None:
@@ -611,7 +732,10 @@ def gerar_foto_hero_com_verificacao(
 
     Produtos sem nenhuma foto real de referencia (fallback por texto) nao
     tem como ter fidelidade verificada -- sao aceitos sem checagem (hoje
-    nenhum produto do catalogo cai nesse caso).
+    nenhum produto do catalogo cai nesse caso). USADO COMO FALLBACK: a
+    forma principal de gerar a foto agora e
+    gerar_foto_composta_ambiente_com_verificacao (ver
+    executar_pipeline_semanal.obter_foto_hero).
     """
     nome_arquivo = nome_arquivo or produto["id"]
     referencias = [
@@ -663,109 +787,6 @@ def gerar_foto_hero_com_verificacao(
     print(
         f"  aviso: '{produto['id']}' nao passou na verificacao apos "
         f"{max_tentativas} tentativas -- pulando este produto"
-    )
-    return None
-
-
-def montar_prompt_variacao_ambiente(produto: dict) -> str:
-    """
-    Prompt pra gerar uma SEGUNDA foto do produto no ambiente, com
-    angulo/composicao DIFERENTE da foto hero principal (montar_prompt_edicao
-    pede explicitamente "o MESMO angulo de camera, mesmo enquadramento" --
-    aqui e o oposto, de proposito) -- criado em 06/10/2026 a pedido do
-    usuario: os slides do formato vitrine repetiam a mesma foto hero em
-    varios slides, sem variar o ambiente mostrado.
-    """
-    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
-    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
-
-    medidas_aberto, _ = extrair_dimensoes(produto.get("descricao_tecnica", ""))
-    instrucao_medidas = (
-        f" Use as medidas reais do produto aberto/em uso ({medidas_aberto}) "
-        "pra manter escala e proporcoes corretas em relacao aos moveis/comodo."
-        if medidas_aberto else ""
-    )
-
-    return (
-        f"Voce recebeu foto(s) real(is) de referencia do produto "
-        f"'{produto['nome']}' ({produto['categoria']}) de uma loja de "
-        f"enxovais.{contexto_produto}{instrucao_medidas}\n\n"
-        "As fotos de referencia podem ter anotacoes de diagrama sobrepostas "
-        "(setas, caixas de texto, linhas e numeros de medida) e/ou closes "
-        "de amostra de tecido -- ignore completamente essas marcacoes.\n\n"
-        "Gere uma nova fotografia de produto, profissional, para "
-        "e-commerce, mostrando o MESMO produto no MESMO tipo de ambiente "
-        "(quarto/cama, sala, banheiro -- o que fizer sentido pra categoria), "
-        "porem com uma COMPOSICAO DIFERENTE da cena: troque o angulo de "
-        "camera (ex: mais de lado, mais de cima, ou mais proximo) e/ou o "
-        "enquadramento, como se fosse uma segunda foto tirada na mesma "
-        "sessao, de um ponto de vista diferente -- NAO repita a composicao "
-        "frontal/padrao, mas tambem NAO troque o comodo nem o estilo geral "
-        "de decoracao.\n"
-        "(a) garanta que o tecido siga fielmente o padrao, cores e escala "
-        "reais mostrados nas fotos de referencia, sem inventar um padrao "
-        "novo nem reinterpretar o motivo/estampa;\n"
-        "(b) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
-        "inteiro da cena, SEM nenhuma seta, caixa de texto, legenda, linha "
-        "ou numero de medida, e SEM nenhum close/inset separado de "
-        "amostra de tecido;\n"
-        "(c) iluminacao natural suave, estilo elegante e sofisticado, sem "
-        "pessoas, sem logotipo, sem texto.\n"
-        "Proporcao quadrada, adequada para post de Instagram."
-    )
-
-
-def gerar_foto_ambiente_variacao_com_verificacao(
-    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
-) -> str | None:
-    """
-    Gera uma SEGUNDA foto do produto no ambiente, com angulo/composicao
-    diferente da foto hero principal (ver montar_prompt_variacao_ambiente),
-    com o mesmo filtro automatico de qualidade (verificar_foto_hero, com
-    retry). Usado pelo formato "vitrine" pra variar os slides 1/2/3 em vez
-    de repetir a mesma foto hero (ver executar_pipeline_semanal.
-    obter_foto_ambiente_variacao).
-
-    Retorna None se o produto nao tiver nenhuma referencia real, ou se
-    reprovar em todas as tentativas -- o chamador deve cair pra reaproveitar
-    a foto principal nesse caso, nunca usar uma imagem reprovada.
-    """
-    referencias = [
-        c for c in (produto.get("imagem_ambiente"), produto.get("imagem_estampa")) if c
-    ]
-    if not referencias:
-        return None
-
-    nome_arquivo = nome_arquivo or f"{produto['id']}_ambiente_var"
-    correcao = None
-    caminho_atual = None
-
-    for tentativa in range(1, max_tentativas + 1):
-        nome = f"{nome_arquivo}_v{tentativa}"
-        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando variacao de ambiente de {produto['id']}...")
-        prompt = montar_prompt_variacao_ambiente(produto)
-        if correcao:
-            prompt += (
-                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
-                f"{correcao}. Corrija isso especificamente."
-            )
-        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
-        if caminho_atual is None:
-            print("  -> nenhuma imagem retornada, tentando de novo")
-            continue
-
-        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
-        if passou:
-            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
-            return caminho_atual
-
-        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
-        correcao = motivo or "a imagem nao corresponde ao produto real"
-
-    print(
-        f"  aviso: variacao de ambiente de '{produto['id']}' nao passou na "
-        f"verificacao apos {max_tentativas} tentativas -- caindo pra "
-        f"reaproveitar a foto principal"
     )
     return None
 
