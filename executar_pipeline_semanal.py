@@ -200,19 +200,35 @@ def escolher_produtos_candidatos(campanha: dict | None, historico: list[dict]) -
     tambem puxam os proximos da lista como "extras" (ver
     _obter_produtos_extras).
 
-    Se o tema da semana restringir a produtos especificos (painel PWA),
-    embaralha so entre eles -- sem olhar o rodizio geral.
+    Secao "Produtos" do painel PWA: categorias_foco marca quais
+    categorias entram (cada uma com um sub-seletor "Aleatorio" OU
+    produtos especificos, ver webapp/js/app.js
+    _renderizarProdutosPorCategoria); produtos_ids tem os IDs marcados a
+    mao em QUALQUER uma dessas categorias. Categoria marcada mas SEM
+    nenhum produto seu em produtos_ids == "Aleatorio" pra ela (qualquer
+    produto daquela categoria entra); categoria com pelo menos 1 produto
+    marcado fica restrita so a esses. Se nada foi marcado em nenhuma das
+    duas listas, cai pro fluxo pela campanha (como antes).
     """
     tema = carregar_tema()
     produtos = _carregar_produtos()
-
-    if tema and tema.get("produtos_ids"):
-        forcados = [p for p in produtos if p["id"] in tema["produtos_ids"]]
-        if forcados:
-            random.shuffle(forcados)
-            return forcados
-
     usados_recentes = {h["produto_id"] for h in historico[-8:]}
+
+    categorias_foco = (tema or {}).get("categorias_foco")
+    produtos_ids = (tema or {}).get("produtos_ids")
+
+    if categorias_foco or produtos_ids:
+        pool = produtos
+        if categorias_foco:
+            pool = [p for p in produtos if any(_categoria_bate(p["categoria"], c) for c in categorias_foco)]
+        if produtos_ids:
+            categorias_com_pin = {p["categoria"] for p in pool if p["id"] in produtos_ids}
+            pool = [p for p in pool if p["categoria"] not in categorias_com_pin or p["id"] in produtos_ids]
+        if pool:
+            nao_usados = [p for p in pool if p["id"] not in usados_recentes]
+            usados = [p for p in pool if p["id"] in usados_recentes]
+            random.shuffle(nao_usados)
+            return nao_usados + usados
 
     candidatos = produtos
     if campanha:

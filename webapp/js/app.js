@@ -57,7 +57,7 @@ function mostrarApp() {
   document.getElementById("app-principal").classList.add("ativo");
   // so agora da pra chamar a API (precisa do token configurado) --
   // ver configurarFormDefinirPostagens, que so monta o HTML estatico.
-  _montarGrupoProdutos();
+  _renderizarProdutosPorCategoria();
   _atualizarBadgeStatusSemana();
 }
 
@@ -155,21 +155,83 @@ function _valoresMarcados(nomeGrupo) {
   return Array.from(document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`)).map((i) => i.value);
 }
 
-async function _montarGrupoProdutos() {
+let _produtosCache = null;
+
+/** Mesma logica de _categoria_bate no backend (calendario_campanhas/executar_pipeline_semanal.py). */
+function _categoriaBate(categoriaProduto, categoriaSelecionada) {
+  return categoriaProduto.toLowerCase().startsWith(categoriaSelecionada.toLowerCase());
+}
+
+async function _carregarProdutosCache() {
+  if (_produtosCache) return _produtosCache;
+  const texto = await lerArquivoRepo("produtos_reais.json");
+  _produtosCache = JSON.parse(texto).produtos;
+  return _produtosCache;
+}
+
+/**
+ * Reconstroi o grupo de produtos especificos SEPARADO POR CATEGORIA,
+ * mostrando so as categorias marcadas em "grupo-categorias". Cada
+ * categoria tem seu proprio "Aleatorio" (marcado por padrao -- nesse
+ * caso qualquer produto daquela categoria fica elegivel) ou produtos
+ * especificos marcados a mao (desmarca o "Aleatorio" da categoria
+ * automaticamente, e vice-versa).
+ */
+async function _renderizarProdutosPorCategoria() {
   const grupo = document.getElementById("grupo-produtos");
+  const categoriasMarcadas = _valoresMarcados("categoria");
+
+  if (categoriasMarcadas.length === 0) {
+    grupo.innerHTML = '<p class="aba-intro">Marque uma categoria acima pra ver os produtos dela (ou deixe sem marcar nenhuma pra não restringir por categoria).</p>';
+    return;
+  }
+
+  let produtos;
   try {
-    const texto = await lerArquivoRepo("produtos_reais.json");
-    const banco = JSON.parse(texto);
-    grupo.innerHTML = "";
-    banco.produtos.forEach((p) => {
-      _criarCheckbox(grupo, "produto", p.id, `${p.nome} (${p.categoria})`, false, false);
-    });
-    if (banco.produtos.length === 0) {
-      grupo.innerHTML = '<p class="vazio">Nenhum produto no catálogo ainda.</p>';
-    }
+    produtos = await _carregarProdutosCache();
   } catch {
     grupo.innerHTML = '<p class="status erro">Não consegui carregar a lista de produtos.</p>';
+    return;
   }
+
+  grupo.innerHTML = "";
+  categoriasMarcadas.forEach((categoria) => {
+    const produtosDaCategoria = produtos.filter((p) => _categoriaBate(p.categoria, categoria));
+
+    const bloco = document.createElement("div");
+    bloco.className = "subgrupo-categoria";
+    const titulo = document.createElement("p");
+    titulo.className = "subgrupo-titulo";
+    titulo.textContent = categoria;
+    bloco.appendChild(titulo);
+
+    if (produtosDaCategoria.length === 0) {
+      const vazio = document.createElement("p");
+      vazio.className = "vazio";
+      vazio.textContent = "Nenhum produto cadastrado nessa categoria ainda.";
+      bloco.appendChild(vazio);
+      grupo.appendChild(bloco);
+      return;
+    }
+
+    const nomeAleatorio = `aleatorio_cat_${categoria}`;
+    const checkAleatorio = _criarCheckbox(bloco, nomeAleatorio, "1", "Aleatório (qualquer produto desta categoria)", true, false);
+
+    const checksProduto = produtosDaCategoria.map((p) =>
+      _criarCheckbox(bloco, "produto", p.id, p.nome, false, false)
+    );
+
+    checkAleatorio.addEventListener("change", () => {
+      if (checkAleatorio.checked) checksProduto.forEach((c) => (c.checked = false));
+    });
+    checksProduto.forEach((c) =>
+      c.addEventListener("change", () => {
+        if (c.checked) checkAleatorio.checked = false;
+      })
+    );
+
+    grupo.appendChild(bloco);
+  });
 }
 
 function _calcularStatusSemana(definidoEm) {
@@ -210,13 +272,13 @@ async function _atualizarBadgeStatusSemana() {
 async function _validarSelecao(selecao) {
   const avisos = [];
 
-  if (selecao.padroes.some((p) => PADROES.find((x) => x.chave === p)?.aviso)) {
+  if ((selecao.padroes || []).some((p) => PADROES.find((x) => x.chave === p)?.aviso)) {
     avisos.push(
       "Cross-sell e Estilo de vida/Inspiração usam formatos que podem precisar de várias fotos de produtos diferentes -- o bot tenta montar sozinho, mas o resultado pode variar mais. Vale conferir antes de publicar."
     );
   }
 
-  if (selecao.produtos_ids.length > 0) {
+  if ((selecao.produtos_ids || []).length > 0) {
     try {
       const texto = await lerArquivoRepo("produtos_reais.json");
       const banco = JSON.parse(texto);
@@ -282,7 +344,10 @@ function configurarFormDefinirPostagens() {
   PADROES.forEach((p) => _criarCheckbox(grupoPadroes, "padrao", p.chave, p.nome, false, p.aviso));
 
   const grupoCategorias = document.getElementById("grupo-categorias");
-  CATEGORIAS.forEach((cat) => _criarCheckbox(grupoCategorias, "categoria", cat, cat, false, false));
+  CATEGORIAS.forEach((cat) => {
+    const check = _criarCheckbox(grupoCategorias, "categoria", cat, cat, false, false);
+    check.addEventListener("change", _renderizarProdutosPorCategoria);
+  });
 
   const grupoPreco = document.getElementById("grupo-preco");
   _criarRadio(grupoPreco, "preco", "", "Sem preço", true);
