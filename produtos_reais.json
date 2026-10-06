@@ -1,22 +1,6 @@
 {
   "produtos": [
     {
-      "id": "p001",
-      "categoria": "infantil",
-      "nome": "colcha de malha infantil",
-      "tags": [
-        "infantil"
-      ],
-      "cor_predominante": "estampado",
-      "descricao_tecnica": "",
-      "imagem_ambiente": null,
-      "imagem_estampa": "banco_local/p001_variada_0.jpeg",
-      "fotos_variadas": [
-        "banco_local/p001_variada_0.jpeg",
-        "banco_local/p001_variada_1.jpeg"
-      ]
-    },
-    {
       "id": "p002",
       "categoria": "infantil",
       "nome": "lençol de malha infantil",
@@ -746,22 +730,6 @@
       "fotos_variadas": [
         "banco_local/p047_variada_0.jpeg",
         "banco_local/p047_variada_1.jpeg"
-      ]
-    },
-    {
-      "id": "p048",
-      "categoria": "cama (quarto)",
-      "nome": "coberdrom solteiro",
-      "tags": [
-        "cama (quarto)"
-      ],
-      "cor_predominante": "bege",
-      "descricao_tecnica": "",
-      "imagem_ambiente": null,
-      "imagem_estampa": "banco_local/p048_variada_0.jpeg",
-      "fotos_variadas": [
-        "banco_local/p048_variada_0.jpeg",
-        "banco_local/p048_variada_1.jpeg"
       ]
     },
     {

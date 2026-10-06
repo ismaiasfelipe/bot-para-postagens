@@ -175,11 +175,14 @@ def montar_banco_de_produtos() -> dict:
             )
 
             if not caminho_ambiente and not caminho_estampa:
-                # sem estampas/ambiente: usa a 1a de "fotos variadas" como
-                # ultimo recurso pra imagem_estampa tambem
-                caminho_estampa = fotos_variadas[0] if fotos_variadas else None
-
-            if not caminho_ambiente and not caminho_estampa:
+                # SEM fallback pra fotos_variadas[0] aqui de proposito --
+                # descoberto em 06/10/2026 (produto p001) que essa pasta as
+                # vezes guarda foto de catalogo do fornecedor com OUTROS
+                # produtos juntos, nao garantidamente o produto certo. Pior
+                # usar uma foto errada do que nao ter nenhuma (mesmo
+                # raciocinio de _baixar_estampa_se_unica) -- produto fica de
+                # fora do catalogo ate ter imagem_ambiente ou estampa unica
+                # de verdade no Drive.
                 print(f"  [!] {nome_produto}: sem foto ainda, pulando")
                 continue
 

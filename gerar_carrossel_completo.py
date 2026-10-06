@@ -116,22 +116,29 @@ def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None
     s = _slide_paths(pasta_saida)
     itens_inclusos = itens_inclusos or extrair_itens_inclusos(produto.get("descricao_tecnica", "")) or [produto["nome"]]
     fotos_estampas = fotos_estampas or [foto_principal]
-    # NUNCA usa produto["imagem_estampa"]/imagem_ambiente direto aqui --
-    # esses campos vem sem verificacao de que a foto e realmente DESSE
-    # produto (confirmado: produtos com "fotos_variadas" ambiguas podem
-    # ter imagem_estampa apontando pra uma foto de catalogo do fornecedor
-    # com OUTROS produtos juntos, o que quebra a coerencia do slide). Usa
-    # fotos_estampas (ja curada/verificada por quem chamou) se tiver mais
-    # de 1 opcao; senao repete foto_principal -- visualmente repetitivo,
-    # mas sempre do produto certo.
-    foto_secundaria = fotos_estampas[-1] if len(fotos_estampas) > 1 else foto_principal
+
+    # Slide 4 combina a foto hero (gerada) com uma foto REAL complementar,
+    # com o texto batendo com o que de fato aparece -- nao da pra usar
+    # imagem_estampa/imagem_ambiente sem checar qual delas existe (desde
+    # 06/10/2026 o conectar_drive.py nao inventa mais imagem_estampa a
+    # partir de fotos_variadas ambiguas, entao quando o campo vem
+    # preenchido ele e confiavel). Preferencia: imagem_ambiente (produto
+    # no ambiente real) > imagem_estampa (tecido real) > repete a propria
+    # foto hero (sem alegar variedade nenhuma, so reforco visual).
+    if produto.get("imagem_ambiente"):
+        foto_secundaria = produto["imagem_ambiente"]
+        titulo_fechamento, legenda_fechamento = "NO SEU AMBIENTE", "Veja como fica na sua casa de verdade"
+    elif produto.get("imagem_estampa"):
+        foto_secundaria = produto["imagem_estampa"]
+        titulo_fechamento, legenda_fechamento = "NOSSA ESTAMPA", "Tecido real, sem surpresas"
+    else:
+        foto_secundaria = foto_principal
+        titulo_fechamento, legenda_fechamento = "IL VARIEDADES", "Chame no direct e garanta o seu!"
 
     montar_slide_hero(foto_principal, produto["nome"], s[0])
     montar_slide_itens_inclusos(foto_principal, itens_inclusos, s[1])
     montar_slide_variedade(fotos_estampas, s[2])
-    montar_slide_duas_fotos_sobrepostas(
-        foto_principal, foto_secundaria, "IL VARIEDADES", "Chame no direct e garanta o seu!", s[3]
-    )
+    montar_slide_duas_fotos_sobrepostas(foto_principal, foto_secundaria, titulo_fechamento, legenda_fechamento, s[3])
     return s
 
 

@@ -46,6 +46,7 @@ python executar_pipeline_semanal.py --publicar  # publica de verdade
 """
 
 import argparse
+import hashlib
 import json
 import random
 from datetime import date
@@ -306,9 +307,28 @@ def _obter_produtos_extras_mesma_cor(
     return _obter_produtos_extras(mesma_cor, produto_principal["id"], quantidade)
 
 
+def _chave_cache_hero(produto: dict) -> str:
+    """
+    ID do produto + hash curto das fotos de referencia reais (imagem_ambiente
+    + imagem_estampa) -- NAO so o ID sozinho. Descoberto em 06/10/2026: o
+    catalogo foi regenerado (10 -> 53 produtos) e os IDs antigos (p001,
+    p002...) passaram a apontar pra produtos DIFERENTES, mas cache_hero/
+    continuava servindo a foto antiga pra quem pedisse "p001" -- 2 posts
+    reais foram publicados no Instagram com foto trocada antes disso ser
+    percebido. Com o hash, se as referencias do produto mudam (catalogo
+    regenerado de novo, fotos trocadas no Drive, etc.), a chave muda
+    sozinha e uma foto nova e gerada -- nunca mais reaproveita as costas
+    de um ID que mudou de produto.
+    """
+    referencias = "|".join(filter(None, (produto.get("imagem_ambiente"), produto.get("imagem_estampa"))))
+    assinatura = hashlib.sha1(referencias.encode("utf-8")).hexdigest()[:10]
+    return f"{produto['id']}_{assinatura}"
+
+
 def obter_foto_hero(produto: dict) -> str | None:
     """
-    Reaproveita uma foto ja verificada em cache/hero/{id}.png se existir;
+    Reaproveita uma foto ja verificada em cache_hero/ se existir pra essa
+    MESMA combinacao de produto+referencias (ver _chave_cache_hero);
     senao gera uma nova via Gemini COM verificacao automatica de
     fidelidade (gerar_foto_hero_com_verificacao, com retry) e salva no
     cache so se aprovada.
@@ -324,7 +344,7 @@ def obter_foto_hero(produto: dict) -> str | None:
     """
     pasta_cache = Path("cache_hero")
     pasta_cache.mkdir(exist_ok=True)
-    caminho_cache = pasta_cache / f"{produto['id']}.png"
+    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}.png"
     if caminho_cache.exists():
         return str(caminho_cache)
 
