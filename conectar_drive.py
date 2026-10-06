@@ -219,7 +219,11 @@ def _baixar_primeira_imagem(servico, id_subpasta, caminho_base: Path) -> str | N
     extensao = Path(imagem["name"]).suffix or ".jpg"
     caminho_local = caminho_base.with_suffix(extensao)
     baixar_arquivo(servico, imagem["id"], str(caminho_local))
-    return str(caminho_local)
+    # .as_posix() (nao str()) -- produtos_reais.json e commitado e lido
+    # depois por um runner Linux (GitHub Actions), entao o caminho
+    # salvo precisa usar "/" mesmo que este script rode no Windows
+    # (str(Path(...)) usaria "\" no Windows, quebrando no Linux).
+    return caminho_local.as_posix()
 
 
 def _baixar_todas_imagens(servico, id_subpasta, caminho_base: Path) -> list[str]:
@@ -237,7 +241,7 @@ def _baixar_todas_imagens(servico, id_subpasta, caminho_base: Path) -> list[str]
         extensao = Path(imagem["name"]).suffix or ".jpg"
         caminho_local = caminho_base.with_name(f"{caminho_base.name}_{indice}").with_suffix(extensao)
         baixar_arquivo(servico, imagem["id"], str(caminho_local))
-        caminhos.append(str(caminho_local))
+        caminhos.append(caminho_local.as_posix())  # ver comentario em _baixar_primeira_imagem
     return caminhos
 
 
