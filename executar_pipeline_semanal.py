@@ -47,12 +47,16 @@ python executar_pipeline_semanal.py --publicar  # publica de verdade
 
 import argparse
 import json
+import random
 from datetime import date
 from pathlib import Path
 
-from calendario_campanhas import CAMPANHAS, campanhas_ativas_na_semana, montar_legenda, HASHTAGS_FIXAS
-from tema_semana import carregar_tema
-from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao
+from calendario_campanhas import (
+    CAMPANHAS, campanhas_ativas_na_semana, montar_legenda, HASHTAGS_FIXAS,
+    MAPEAMENTO_PADRAO_FORMATOS,
+)
+from tema_semana import carregar_tema, CAMPANHA_PADRAO_MARCA
+from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao, gerar_legenda_ia, extrair_preco
 from gerar_carrossel_completo import gerar_carrossel
 from montar_story import (
     montar_story_abas_onduladas,
@@ -68,6 +72,18 @@ from publicar_instagram import publicar_carrossel, publicar_story
 ARQUIVO_PRODUTOS = "produtos_reais.json"
 ARQUIVO_HISTORICO = "historico_publicacoes.json"
 FORMATOS_SIMPLES_GENERICOS = ["vitrine", "novidade_semana", "detalhe_textura"]
+
+# quantos produtos extras (alem do principal) cada formato multi-foto
+# precisa, pra saber quantos tentar reunir em _obter_produtos_extras
+QUANTIDADE_EXTRAS_POR_FORMATO = {
+    "kit_combo": 1,
+    "giro_categoria": 2,
+    "inspiracao_decoracao": 2,
+    "paleta_em_foco": 3,
+    "ambientes_estilos": 2,
+}
+
+DIAS_SEMANA_PT = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"]
 
 
 def _construir_story_banner_topo(foto_hero, produto, campanha, caminho):
@@ -151,17 +167,25 @@ def _campanha_sintetica_categoria(categoria: str) -> dict:
 
 def escolher_campanha() -> dict | None:
     """
-    Prioridade: tema da semana definido manualmente (tema_semana.py) >
+    Prioridade: tema da semana definido manualmente (painel PWA) >
     campanha ativa pelo calendario > nenhuma (fluxo generico).
+
+    Se o tema tiver mais de 1 campanha marcada, sorteia uma a cada
+    publicacao do dia (nao fixa a semana toda) -- CAMPANHA_PADRAO_MARCA
+    sorteada equivale a "nenhuma campanha" (fluxo generico de marca).
     """
     tema = carregar_tema()
     if tema:
-        if tema.get("campanha_chave"):
-            encontrada = next((c for c in CAMPANHAS if c["chave"] == tema["campanha_chave"]), None)
-            if encontrada:
-                return encontrada
-        if tema.get("categoria_foco"):
-            return _campanha_sintetica_categoria(tema["categoria_foco"])
+        chaves = tema.get("campanhas_chaves")
+        if chaves:
+            escolhida = random.choice(chaves)
+            if escolhida != CAMPANHA_PADRAO_MARCA:
+                encontrada = next((c for c in CAMPANHAS if c["chave"] == escolhida), None)
+                if encontrada:
+                    return encontrada
+            return None
+        if tema.get("categorias_foco"):
+            return _campanha_sintetica_categoria(random.choice(tema["categorias_foco"]))
 
     ativas = campanhas_ativas_na_semana()
     return ativas[0] if ativas else None
@@ -172,18 +196,21 @@ def escolher_produtos_candidatos(campanha: dict | None, historico: list[dict]) -
     Devolve os produtos candidatos em ordem de preferencia (nao usados
     recentemente primeiro). Devolve uma LISTA -- se o primeiro candidato
     reprovar na verificacao de foto (obter_foto_hero), o chamador tenta o
-    proximo em vez de travar ou publicar algo errado.
+    proximo em vez de travar ou publicar algo errado; formatos multi-foto
+    tambem puxam os proximos da lista como "extras" (ver
+    _obter_produtos_extras).
 
-    Se o tema da semana forcar um produto especifico (tema_semana.py),
-    devolve so ele -- sem rodizio.
+    Se o tema da semana restringir a produtos especificos (painel PWA),
+    embaralha so entre eles -- sem olhar o rodizio geral.
     """
     tema = carregar_tema()
     produtos = _carregar_produtos()
 
-    if tema and tema.get("produto_id"):
-        forcado = next((p for p in produtos if p["id"] == tema["produto_id"]), None)
-        if forcado:
-            return [forcado]
+    if tema and tema.get("produtos_ids"):
+        forcados = [p for p in produtos if p["id"] in tema["produtos_ids"]]
+        if forcados:
+            random.shuffle(forcados)
+            return forcados
 
     usados_recentes = {h["produto_id"] for h in historico[-8:]}
 
@@ -202,10 +229,46 @@ def escolher_produtos_candidatos(campanha: dict | None, historico: list[dict]) -
 
 
 def escolher_formato(campanha: dict | None, historico: list[dict]) -> str:
+    """
+    Prioridade: "padroes" marcados no tema da semana (sorteia 1 padrao,
+    depois 1 formato tecnico dentro dele) > formato sugerido pela
+    campanha > rodizio generico.
+    """
+    tema = carregar_tema()
+    if tema and tema.get("padroes"):
+        padrao = random.choice(tema["padroes"])
+        formatos = MAPEAMENTO_PADRAO_FORMATOS.get(padrao) or FORMATOS_SIMPLES_GENERICOS
+        return random.choice(formatos)
     if campanha:
         return campanha.get("formato_sugerido", "vitrine")
     n = len(historico)
     return FORMATOS_SIMPLES_GENERICOS[n % len(FORMATOS_SIMPLES_GENERICOS)]
+
+
+def _obter_produtos_extras(
+    candidatos: list[dict], excluir_id: str, quantidade: int
+) -> list[tuple[dict, str]]:
+    """
+    Reune ate `quantidade` produtos extras (alem do principal, ja em
+    `excluir_id`) com foto hero aprovada, pros formatos multi-foto
+    (kit_combo, giro_categoria, inspiracao_decoracao, paleta_em_foco,
+    ambientes_estilos -- ver QUANTIDADE_EXTRAS_POR_FORMATO). Percorre os
+    MESMOS candidatos ja filtrados por categoria da campanha, pulando o
+    produto principal e qualquer um que reprove na verificacao de foto.
+
+    Pode devolver MENOS que `quantidade` se nao houver candidatos
+    suficientes (o chamador deve tratar esse caso -- ver rodar()).
+    """
+    extras = []
+    for candidato in candidatos:
+        if candidato["id"] == excluir_id:
+            continue
+        if len(extras) >= quantidade:
+            break
+        foto = obter_foto_hero(candidato)
+        if foto is not None:
+            extras.append((candidato, foto))
+    return extras
 
 
 def obter_foto_hero(produto: dict) -> str | None:
@@ -247,19 +310,45 @@ def escolher_blocos_stories(historico: list[dict]) -> list:
 
 
 def montar_stories_do_post(
-    pasta_saida: str, foto_hero: str, produto: dict, campanha: dict | None, historico: list[dict]
+    pasta_saida: str,
+    foto_hero: str,
+    produto: dict,
+    campanha: dict | None,
+    historico: list[dict],
+    preco: str = "",
 ) -> list[str]:
+    """
+    Gira pelos 2 blocos de story do rodizio normal -- EXCETO quando ha
+    preco do dia (tema_semana.preco_dia, ver _deve_mostrar_preco): nesse
+    caso o 2o slot vira um story dedicado de preco
+    (_construir_story_preco), substituindo o bloco do rodizio normal
+    nesse dia (regra "2 stories por carrossel" se mantem, so muda o
+    conteudo de 1 deles).
+    """
     pasta_stories = Path(pasta_saida) / "stories"
     pasta_stories.mkdir(parents=True, exist_ok=True)
+    blocos = escolher_blocos_stories(historico)
     caminhos = []
-    for i, construtor in enumerate(escolher_blocos_stories(historico), start=1):
+    for i, construtor in enumerate(blocos, start=1):
         caminho = str(pasta_stories / f"story{i}.png")
-        construtor(foto_hero, produto, campanha, caminho)
+        if i == len(blocos) and preco:
+            _construir_story_preco(foto_hero, produto, campanha, caminho, preco)
+        else:
+            construtor(foto_hero, produto, campanha, caminho)
         caminhos.append(caminho)
     return caminhos
 
 
-def montar_dados_formato(formato: str, campanha: dict | None, foto_hero: str) -> dict:
+def montar_dados_formato(
+    formato: str,
+    campanha: dict | None,
+    foto_hero: str,
+    produto: dict | None = None,
+    extras: list[tuple[dict, str]] | None = None,
+    preco: str = "",
+) -> dict:
+    extras = extras or []
+
     if formato == "campanha_sazonal":
         return {
             "foto_principal": foto_hero,
@@ -276,15 +365,76 @@ def montar_dados_formato(formato: str, campanha: dict | None, foto_hero: str) ->
         # que ser curto, NUNCA a frase inteira do CTA (que ja aparece,
         # por completo, no slide 4), senao o texto estoura o slide. O
         # nome/data da campanha ja aparecem nos slides 1 e 2, nao repete.
+        # Se tiver preco do dia (tema_semana.preco_dia), substitui a
+        # condicao generica pelo valor real.
         return {
             "foto_principal": foto_hero,
             "data_promocao": date.today().strftime("%d/%m"),
-            "condicao": "Condição especial, só hoje!",
+            "condicao": f"Por apenas {preco}, só hoje!" if preco else "Condição especial, só hoje!",
+        }
+    if formato == "kit_combo":
+        # precisa de 1 produto extra -- ver QUANTIDADE_EXTRAS_POR_FORMATO
+        # e _obter_produtos_extras. Chamador garante len(extras) >= 1
+        # antes de chegar aqui (ver rodar()).
+        extra_produto, extra_foto = extras[0]
+        return {
+            "foto_principal": foto_hero,
+            "produto_extra": {"nome": extra_produto["nome"], "foto": extra_foto},
+        }
+    if formato == "giro_categoria":
+        # variantes[0] e o produto principal, [1] e [2] sao os extras --
+        # chamador garante len(extras) >= 2 antes de chegar aqui.
+        variantes = [{"foto": foto_hero, "nome": produto["nome"]}]
+        variantes += [{"foto": foto, "nome": p["nome"]} for p, foto in extras[:2]]
+        return {"variantes": variantes}
+    if formato == "inspiracao_decoracao":
+        # fotos_grid: produto principal + ate 2 extras (chamador garante
+        # pelo menos 2 extras antes de chegar aqui).
+        fotos_grid = [foto_hero] + [foto for _, foto in extras[:2]]
+        return {"fotos_grid": fotos_grid, "foto_destaque": foto_hero}
+    if formato == "paleta_em_foco":
+        # pares: 2 tuplas de (foto1,rotulo1,foto2,rotulo2) -- 4 fotos ao
+        # todo (produto principal + ate 3 extras, chamador garante isso).
+        todos = [(produto, foto_hero)] + extras[:3]
+        rotulos = [p["nome"][:18] for p, _ in todos]
+        fotos = [foto for _, foto in todos]
+        cor_paleta = (produto.get("cor_predominante") or produto["categoria"]).strip()
+        pares = [
+            (fotos[0], rotulos[0], fotos[1], rotulos[1]),
+            (fotos[2], rotulos[2], fotos[3], rotulos[3]),
+        ]
+        return {"cor_paleta": cor_paleta, "pares": pares}
+    if formato == "ambientes_estilos":
+        # estilos: produto principal + ate 2 extras (chamador garante
+        # pelo menos 2 extras antes de chegar aqui).
+        todos = [(produto, foto_hero)] + extras[:2]
+        return {
+            "estilos": [
+                {"foto": foto, "titulo": p["nome"], "subtitulo": "Qualidade IL Variedades"}
+                for p, foto in todos
+            ]
         }
     return {"foto_principal": foto_hero}  # vitrine, novidade_semana, detalhe_textura
 
 
+def _dia_semana_hoje() -> str:
+    return DIAS_SEMANA_PT[date.today().weekday()]
+
+
+def _deve_mostrar_preco(tema: dict | None) -> bool:
+    if not tema or not tema.get("preco_dia"):
+        return False
+    preco_dia = tema["preco_dia"]
+    return preco_dia == "todos" or preco_dia == _dia_semana_hoje()
+
+
+def _construir_story_preco(foto_hero, produto, campanha, caminho, preco):
+    etiqueta = campanha["nome"][:10] if campanha else "Promoção"
+    montar_story_circulo_fita(foto_hero, etiqueta, produto["nome"], f"Por {preco}", caminho)
+
+
 def rodar(publicar: bool = False) -> None:
+    tema = carregar_tema()
     campanha = escolher_campanha()
     historico = _carregar_historico()
     candidatos = escolher_produtos_candidatos(campanha, historico)
@@ -310,15 +460,45 @@ def rodar(publicar: bool = False) -> None:
     print(f"\nProduto escolhido: {produto['id']} - {produto['nome']}")
     print(f"Foto hero: {foto_hero}")
 
+    # formatos multi-foto (kit_combo, giro_categoria, inspiracao_decoracao,
+    # paleta_em_foco, ambientes_estilos) precisam de produtos extras com
+    # foto aprovada -- se nao achar o suficiente entre os candidatos
+    # restantes, cai pra um formato generico de 1 foto em vez de travar
+    # ou publicar com dados incompletos.
+    extras = []
+    quantidade_extra = QUANTIDADE_EXTRAS_POR_FORMATO.get(formato, 0)
+    if quantidade_extra:
+        extras = _obter_produtos_extras(candidatos, produto["id"], quantidade_extra)
+        if len(extras) < quantidade_extra:
+            print(
+                f"  aviso: so achou {len(extras)}/{quantidade_extra} produtos extras pro "
+                f"formato '{formato}' -- caindo pra um formato generico de 1 foto"
+            )
+            formato = FORMATOS_SIMPLES_GENERICOS[len(historico) % len(FORMATOS_SIMPLES_GENERICOS)]
+            extras = []
+
+    preco = ""
+    if _deve_mostrar_preco(tema):
+        preco = extrair_preco(produto.get("descricao_tecnica", ""))
+        if preco:
+            print(f"Preço do dia ({tema['preco_dia']}): {preco}")
+        else:
+            print(f"  aviso: tema pede preco hoje, mas '{produto['id']}' nao tem preco na ficha tecnica")
+
     pasta_saida = f"saida/carrossel_{produto['id']}_{formato}"
-    dados_formato = montar_dados_formato(formato, campanha, foto_hero)
+    dados_formato = montar_dados_formato(
+        formato, campanha, foto_hero, produto=produto, extras=extras, preco=preco
+    )
     slides = gerar_carrossel(formato, produto["id"], pasta_saida=pasta_saida, **dados_formato)
     print(f"Slides montados: {slides}")
 
-    stories = montar_stories_do_post(pasta_saida, foto_hero, produto, campanha, historico)
+    stories = montar_stories_do_post(pasta_saida, foto_hero, produto, campanha, historico, preco=preco)
     print(f"Stories montados: {stories}")
 
-    legenda = montar_legenda(campanha, produto)
+    linguagem = (tema or {}).get("linguagem")
+    legenda = gerar_legenda_ia(produto, campanha, linguagem) if linguagem else montar_legenda(campanha, produto)
+    if preco and preco not in legenda:
+        legenda = f"{legenda}\n\n💰 Por {preco}"
     print(f"\nLegenda:\n{legenda}\n")
 
     if not publicar:

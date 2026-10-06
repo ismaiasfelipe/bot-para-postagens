@@ -115,6 +115,116 @@ def extrair_dimensoes(descricao_tecnica: str) -> tuple[str, str]:
     return medidas_aberto.replace("\n", "; "), medidas_dobrado
 
 
+_CABECALHOS_CONHECIDOS_FICHA = {
+    "PRODUTO", "DESCRIÇÃO", "MODELO", "CARACTERÍSTICAS", "COMPOSIÇÃO",
+    "INFORMAÇÕES IMPORTANTES", "PESO LIQ(kg)", "DIMENSÃO",
+    "PREÇO", "PREÇO (R$)", "PRECO", "VALOR",
+}
+
+
+def extrair_preco(descricao_tecnica: str) -> str:
+    """
+    Extrai o preco da ficha tecnica, se o campo existir. Em 06/10/2026 o
+    modelo padrao de ficha tecnica AINDA NAO tem esse campo -- ao
+    contrario de extrair_dimensoes (que usa indices fixos pros 8
+    cabecalhos ja existentes), aqui a posicao do cabecalho "PRECO" e
+    descoberta dinamicamente (varrendo celulas do inicio enquanto baterem
+    com um nome de cabecalho conhecido), pra funcionar assim que o campo
+    for adicionado ao modelo do Google Docs, em qualquer posicao.
+
+    Devolve "" se o campo nao existir ou a ficha nao seguir a estrutura
+    tab-separated esperada (mesmo parse de extrair_itens_inclusos).
+
+    Limitacao conhecida: so encontra o campo se ele vier DEPOIS dos 4
+    primeiros cabecalhos fixos (PRODUTO/DESCRIÇÃO/MODELO/CARACTERÍSTICAS)
+    -- inserir "PREÇO" antes de CARACTERÍSTICAS quebraria essa checagem
+    inicial (ela tambem e usada por extrair_itens_inclusos/
+    extrair_dimensoes, entao nao da pra mudar so aqui). Na pratica, uma
+    coluna nova tende a ser adicionada no fim da tabela, cenario ja
+    coberto.
+    """
+    if not descricao_tecnica:
+        return ""
+    texto = descricao_tecnica.lstrip("﻿").strip()
+    celulas = [c.strip() for c in texto.split("\t")]
+
+    cabecalhos_esperados = ["PRODUTO", "DESCRIÇÃO", "MODELO", "CARACTERÍSTICAS"]
+    if len(celulas) < 8 or celulas[:4] != cabecalhos_esperados:
+        return ""
+
+    n_cabecalhos = 0
+    while n_cabecalhos < len(celulas) and celulas[n_cabecalhos] in _CABECALHOS_CONHECIDOS_FICHA:
+        n_cabecalhos += 1
+
+    for nome_variante in ("PREÇO", "PREÇO (R$)", "PRECO", "VALOR"):
+        if nome_variante in celulas[:n_cabecalhos]:
+            indice_cabecalho = celulas[:n_cabecalhos].index(nome_variante)
+            indice_valor = n_cabecalhos + indice_cabecalho
+            if indice_valor < len(celulas):
+                return celulas[indice_valor]
+    return ""
+
+
+_INSTRUCOES_LINGUAGEM = {
+    "neutra": "Tom neutro e informativo, direto ao ponto, sem exageros.",
+    "acolhedora": "Tom caloroso, aconchegante e acolhedor, como se estivesse conversando com alguém querido.",
+    "chamativa": "Tom animado e chamativo, com senso de novidade/urgência, mais pontos de exclamação, linguagem energética.",
+    "agressiva": "Tom direto e imperativo, focado em ação imediata de compra, frases curtas e assertivas, sem rodeios.",
+}
+
+
+def montar_prompt_legenda(produto: dict, campanha: dict | None, linguagem: str) -> str:
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha técnica: {descricao[:300]}." if descricao else ""
+    instrucao_tom = _INSTRUCOES_LINGUAGEM.get(linguagem, _INSTRUCOES_LINGUAGEM["neutra"])
+
+    contexto_campanha = ""
+    if campanha:
+        contexto_campanha = (
+            f"\nCampanha ativa: '{campanha['nome']}'. CTA sugerido: '{campanha['cta']}'."
+        )
+
+    return (
+        f"Escreva uma legenda de Instagram para a loja de enxovais "
+        f"{MARCA['nome']}, sobre o produto '{produto['nome']}' "
+        f"({produto['categoria']}).{contexto_produto}{contexto_campanha}\n\n"
+        f"TOM DE VOZ: {instrucao_tom}\n\n"
+        "Regras:\n"
+        "- Primeira pessoa do plural (nós, nosso/nossa).\n"
+        "- No máximo 4-5 linhas curtas, sem contar hashtags.\n"
+        "- Termine com uma chamada para ação clara (chamar no direct).\n"
+        "- Pode usar emojis discretos (no máximo 2-3).\n"
+        "- NÃO use markdown, asteriscos ou formatação -- só texto puro.\n"
+        "- Responda APENAS com a legenda final, sem explicações."
+    )
+
+
+def gerar_legenda_ia(produto: dict, campanha: dict | None, linguagem: str = "neutra") -> str:
+    """
+    Gera a legenda do post via Gemini (texto), variando o tom de voz
+    conforme 'linguagem' (ver tema_semana.LINGUAGENS_VALIDAS) -- usado no
+    lugar de calendario_campanhas.montar_legenda quando o usuario escolhe
+    um tom pelo painel PWA. Em caso de erro/resposta vazia da API, cai
+    pro template fixo (montar_legenda) como fallback -- nunca deixa o
+    post sem legenda por causa disso.
+    """
+    from calendario_campanhas import montar_legenda, HASHTAGS_FIXAS
+
+    try:
+        client = _obter_cliente()
+        prompt = montar_prompt_legenda(produto, campanha, linguagem)
+        resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=prompt)
+        texto = (resposta.text or "").strip()
+        if not texto:
+            raise ValueError("resposta vazia da API")
+    except Exception as e:
+        print(f"  aviso: geracao de legenda via IA falhou ({e!r}), usando template fixo")
+        return montar_legenda(campanha, produto)
+
+    hashtags = f"{campanha['hashtags_extras']} {HASHTAGS_FIXAS}".strip() if campanha else HASHTAGS_FIXAS
+    return f"{texto}\n\n{hashtags}"
+
+
 def montar_prompt_texto(produto: dict, marca: dict) -> str:
     """Prompt para o fallback de geracao pura por texto (sem fotos de referencia reais)."""
     cores = marca["cores"]

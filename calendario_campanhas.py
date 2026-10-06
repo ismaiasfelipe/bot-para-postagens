@@ -254,6 +254,23 @@ for _c in _CAMPANHAS_SAZONAIS:
 CAMPANHAS = _PROMOCOES_MENSAIS + _CAMPANHAS_SAZONAIS
 
 
+# --- padroes de negocio (app) -> formatos tecnicos de carrossel --------
+#
+# "apresentacao_produto" e "promocao" ja estao no rodizio automatico (1
+# unica foto hero). "cross_sell" e "estilo_vida" pedem varias fotos/
+# produtos por slide -- o pipeline tenta montar automaticamente
+# reaproveitando candidatos/fotos_variadas (ver
+# executar_pipeline_semanal.escolher_formato e _montar_dados_*), mas com
+# qualidade mais variavel que os formatos de 1 foto -- o app avisa disso
+# ao usuario antes de marcar essas 2 opcoes.
+MAPEAMENTO_PADRAO_FORMATOS = {
+    "apresentacao_produto": ["vitrine", "novidade_semana", "detalhe_textura"],
+    "promocao": ["promocao_relampago", "campanha_sazonal"],
+    "cross_sell": ["kit_combo", "giro_categoria"],
+    "estilo_vida": ["inspiracao_decoracao", "ambientes_estilos", "paleta_em_foco"],
+}
+
+
 # --- calculo de datas --------------------------------------------------
 
 def _segundo_domingo(ano: int, mes: int) -> date:
