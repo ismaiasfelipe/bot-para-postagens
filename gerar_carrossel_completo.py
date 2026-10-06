@@ -116,7 +116,15 @@ def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None
     s = _slide_paths(pasta_saida)
     itens_inclusos = itens_inclusos or extrair_itens_inclusos(produto.get("descricao_tecnica", "")) or [produto["nome"]]
     fotos_estampas = fotos_estampas or [foto_principal]
-    foto_secundaria = produto.get("imagem_estampa") or produto.get("imagem_ambiente") or foto_principal
+    # NUNCA usa produto["imagem_estampa"]/imagem_ambiente direto aqui --
+    # esses campos vem sem verificacao de que a foto e realmente DESSE
+    # produto (confirmado: produtos com "fotos_variadas" ambiguas podem
+    # ter imagem_estampa apontando pra uma foto de catalogo do fornecedor
+    # com OUTROS produtos juntos, o que quebra a coerencia do slide). Usa
+    # fotos_estampas (ja curada/verificada por quem chamou) se tiver mais
+    # de 1 opcao; senao repete foto_principal -- visualmente repetitivo,
+    # mas sempre do produto certo.
+    foto_secundaria = fotos_estampas[-1] if len(fotos_estampas) > 1 else foto_principal
 
     montar_slide_hero(foto_principal, produto["nome"], s[0])
     montar_slide_itens_inclusos(foto_principal, itens_inclusos, s[1])
