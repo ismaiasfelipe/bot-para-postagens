@@ -667,6 +667,109 @@ def gerar_foto_hero_com_verificacao(
     return None
 
 
+def montar_prompt_variacao_ambiente(produto: dict) -> str:
+    """
+    Prompt pra gerar uma SEGUNDA foto do produto no ambiente, com
+    angulo/composicao DIFERENTE da foto hero principal (montar_prompt_edicao
+    pede explicitamente "o MESMO angulo de camera, mesmo enquadramento" --
+    aqui e o oposto, de proposito) -- criado em 06/10/2026 a pedido do
+    usuario: os slides do formato vitrine repetiam a mesma foto hero em
+    varios slides, sem variar o ambiente mostrado.
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    medidas_aberto, _ = extrair_dimensoes(produto.get("descricao_tecnica", ""))
+    instrucao_medidas = (
+        f" Use as medidas reais do produto aberto/em uso ({medidas_aberto}) "
+        "pra manter escala e proporcoes corretas em relacao aos moveis/comodo."
+        if medidas_aberto else ""
+    )
+
+    return (
+        f"Voce recebeu foto(s) real(is) de referencia do produto "
+        f"'{produto['nome']}' ({produto['categoria']}) de uma loja de "
+        f"enxovais.{contexto_produto}{instrucao_medidas}\n\n"
+        "As fotos de referencia podem ter anotacoes de diagrama sobrepostas "
+        "(setas, caixas de texto, linhas e numeros de medida) e/ou closes "
+        "de amostra de tecido -- ignore completamente essas marcacoes.\n\n"
+        "Gere uma nova fotografia de produto, profissional, para "
+        "e-commerce, mostrando o MESMO produto no MESMO tipo de ambiente "
+        "(quarto/cama, sala, banheiro -- o que fizer sentido pra categoria), "
+        "porem com uma COMPOSICAO DIFERENTE da cena: troque o angulo de "
+        "camera (ex: mais de lado, mais de cima, ou mais proximo) e/ou o "
+        "enquadramento, como se fosse uma segunda foto tirada na mesma "
+        "sessao, de um ponto de vista diferente -- NAO repita a composicao "
+        "frontal/padrao, mas tambem NAO troque o comodo nem o estilo geral "
+        "de decoracao.\n"
+        "(a) garanta que o tecido siga fielmente o padrao, cores e escala "
+        "reais mostrados nas fotos de referencia, sem inventar um padrao "
+        "novo nem reinterpretar o motivo/estampa;\n"
+        "(b) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
+        "inteiro da cena, SEM nenhuma seta, caixa de texto, legenda, linha "
+        "ou numero de medida, e SEM nenhum close/inset separado de "
+        "amostra de tecido;\n"
+        "(c) iluminacao natural suave, estilo elegante e sofisticado, sem "
+        "pessoas, sem logotipo, sem texto.\n"
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def gerar_foto_ambiente_variacao_com_verificacao(
+    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Gera uma SEGUNDA foto do produto no ambiente, com angulo/composicao
+    diferente da foto hero principal (ver montar_prompt_variacao_ambiente),
+    com o mesmo filtro automatico de qualidade (verificar_foto_hero, com
+    retry). Usado pelo formato "vitrine" pra variar os slides 1/2/3 em vez
+    de repetir a mesma foto hero (ver executar_pipeline_semanal.
+    obter_foto_ambiente_variacao).
+
+    Retorna None se o produto nao tiver nenhuma referencia real, ou se
+    reprovar em todas as tentativas -- o chamador deve cair pra reaproveitar
+    a foto principal nesse caso, nunca usar uma imagem reprovada.
+    """
+    referencias = [
+        c for c in (produto.get("imagem_ambiente"), produto.get("imagem_estampa")) if c
+    ]
+    if not referencias:
+        return None
+
+    nome_arquivo = nome_arquivo or f"{produto['id']}_ambiente_var"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando variacao de ambiente de {produto['id']}...")
+        prompt = montar_prompt_variacao_ambiente(produto)
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: variacao de ambiente de '{produto['id']}' nao passou na "
+        f"verificacao apos {max_tentativas} tentativas -- caindo pra "
+        f"reaproveitar a foto principal"
+    )
+    return None
+
+
 def montar_prompt_estampa_close(produto: dict) -> str:
     """
     Prompt pra gerar um CLOSE-UP/macro do tecido real (so a textura/

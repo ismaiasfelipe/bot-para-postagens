@@ -60,6 +60,7 @@ from tema_semana import carregar_tema, CAMPANHA_PADRAO_MARCA
 from gerar_carrossel_gemini import (
     gerar_foto_hero_com_verificacao,
     gerar_foto_estampa_close_com_verificacao,
+    gerar_foto_ambiente_variacao_com_verificacao,
     gerar_legenda_ia,
     extrair_preco,
 )
@@ -387,6 +388,33 @@ def obter_foto_estampa_close(produto: dict) -> str | None:
     return str(caminho_cache)
 
 
+def obter_foto_ambiente_variacao(produto: dict) -> str | None:
+    """
+    Reaproveita uma 2a foto de ambiente verificada (angulo/composicao
+    diferente da hero) em cache_hero/ se existir pra essa mesma
+    combinacao de produto+referencias; senao gera via Gemini
+    (gerar_foto_ambiente_variacao_com_verificacao). So usado pelo formato
+    "vitrine" hoje, pra variar os slides em vez de repetir a foto
+    principal em todos (ver montar_dados_formato).
+
+    Retorna None se o produto nao tiver referencia real ou reprovar --
+    o chamador (_construir_vitrine) cai pra reaproveitar a foto principal
+    nesse caso.
+    """
+    pasta_cache = Path("cache_hero")
+    pasta_cache.mkdir(exist_ok=True)
+    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_ambiente_var.png"
+    if caminho_cache.exists():
+        return str(caminho_cache)
+
+    aprovado = gerar_foto_ambiente_variacao_com_verificacao(produto)
+    if aprovado is None:
+        return None
+
+    caminho_cache.write_bytes(Path(aprovado).read_bytes())
+    return str(caminho_cache)
+
+
 def escolher_blocos_stories(historico: list[dict]) -> list:
     """Gira pelos 6 blocos de story de 1-foto-so, 2 diferentes por post (ver BLOCOS_STORY)."""
     n = len(historico)
@@ -504,11 +532,16 @@ def montar_dados_formato(
             ]
         }
     if formato == "vitrine":
-        # Slide de fechamento (duas fotos sobrepostas) usa um close-up
-        # real do tecido como 2a foto quando disponivel (ver
-        # obter_foto_estampa_close/_construir_vitrine) -- None aqui faz
-        # _construir_vitrine cair pra repetir a foto principal.
-        return {"foto_principal": foto_hero, "foto_estampa_close": obter_foto_estampa_close(produto)}
+        # Gera (com cache) uma 2a foto de ambiente (outro angulo/
+        # composicao) e um close-up do tecido, pra variar os 4 slides em
+        # vez de repetir a mesma foto hero -- None em qualquer uma faz
+        # _construir_vitrine cair pro fallback (reaproveita a principal).
+        return {
+            "foto_principal": foto_hero,
+            "foto_ambiente_variacao": obter_foto_ambiente_variacao(produto),
+            "foto_estampa_close": obter_foto_estampa_close(produto),
+            "campanha": campanha,
+        }
     return {"foto_principal": foto_hero}  # novidade_semana, detalhe_textura
 
 

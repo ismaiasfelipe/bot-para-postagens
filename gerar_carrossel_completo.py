@@ -104,7 +104,10 @@ def _slide_paths(pasta_saida: str, n: int = 4) -> list[str]:
 # --- construtores de cada formato -----------------------------------------
 
 
-def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None, itens_inclusos=None, foto_estampa_close=None):
+def _construir_vitrine(
+    produto, pasta_saida, foto_principal, fotos_estampas=None, itens_inclusos=None,
+    foto_estampa_close=None, foto_ambiente_variacao=None, campanha=None,
+):
     # Ordem/escolha de slides fiel ao wireframe real (exemplo de carrosseis -
     # ex1): hero (1), itens inclusos (2), grade de estampas (3 -- NAO 4,
     # como estava antes) e fechamento com 2 fotos sobrepostas (4). O antigo
@@ -115,17 +118,39 @@ def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None
     # promocao_relampago.
     s = _slide_paths(pasta_saida)
     itens_inclusos = itens_inclusos or extrair_itens_inclusos(produto.get("descricao_tecnica", "")) or [produto["nome"]]
-    fotos_estampas = fotos_estampas or [foto_principal]
+
+    # Selo do slide 1: montar_slide_hero tem "NOVA COLEÇÃO"/"PRIMAVERA"
+    # como default (sobrou de um teste antigo, nao faz sentido como
+    # padrao global -- um post de Black Friday nao pode sair com selo de
+    # Primavera). Usa o nome da campanha ativa quando houver; sem
+    # campanha, cai num selo neutro generico.
+    if campanha:
+        badge_linha1, badge_linha2 = "PROMOÇÃO", campanha["nome"].upper()
+    else:
+        badge_linha1, badge_linha2 = "", "NOVIDADE"
+
+    # Variedade de FOTO entre os slides (nao so de texto): foto_ambiente_variacao
+    # e foto_estampa_close sao geradas e verificadas via IA com angulo/
+    # enquadramento DIFERENTE da hero (ver executar_pipeline_semanal.
+    # obter_foto_ambiente_variacao/obter_foto_estampa_close) -- antes os 4
+    # slides do vitrine repetiam a mesma foto_principal em tudo. Slide 2
+    # (itens inclusos) usa a variacao de ambiente quando aprovada, senao
+    # cai pra foto principal. A grade do slide 3 reaproveita as fotos REAIS
+    # e distintas que tiver disponivel (nunca inventa uma 2a/3a foto so
+    # pra encher a grade).
+    foto_itens = foto_ambiente_variacao or foto_principal
+    if fotos_estampas is None:
+        fotos_estampas = list(dict.fromkeys(
+            f for f in (foto_principal, foto_ambiente_variacao, foto_estampa_close) if f
+        ))
 
     # Slide 4 combina a foto hero (gerada) com um close-up REAL do tecido
-    # (foto_estampa_close -- gerado e verificado via IA, ver
-    # executar_pipeline_semanal.obter_foto_estampa_close). NUNCA usa
-    # imagem_ambiente/imagem_estampa cru direto aqui: confirmado
-    # visualmente que essas fotos de referencia sempre vem com diagrama
-    # de medida/etiquetas sobrepostos, nao sao apresentaveis num slide.
-    # Sem close aprovado (produto sem referencia, ou reprovado na
-    # verificacao), repete a foto principal com texto neutro -- nunca
-    # alega variedade que nao existe.
+    # (foto_estampa_close). NUNCA usa imagem_ambiente/imagem_estampa cru
+    # direto aqui: confirmado visualmente que essas fotos de referencia
+    # sempre vem com diagrama de medida/etiquetas sobrepostos, nao sao
+    # apresentaveis num slide. Sem close aprovado (produto sem referencia,
+    # ou reprovado na verificacao), repete a foto principal com texto
+    # neutro -- nunca alega variedade que nao existe.
     if foto_estampa_close:
         foto_secundaria = foto_estampa_close
         titulo_fechamento, legenda_fechamento = "NOSSA ESTAMPA", "Tecido real, de perto"
@@ -133,8 +158,8 @@ def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None
         foto_secundaria = foto_principal
         titulo_fechamento, legenda_fechamento = "IL VARIEDADES", "Chame no direct e garanta o seu!"
 
-    montar_slide_hero(foto_principal, produto["nome"], s[0])
-    montar_slide_itens_inclusos(foto_principal, itens_inclusos, s[1])
+    montar_slide_hero(foto_principal, produto["nome"], s[0], badge_linha1=badge_linha1, badge_linha2=badge_linha2)
+    montar_slide_itens_inclusos(foto_itens, itens_inclusos, s[1])
     montar_slide_variedade(fotos_estampas, s[2])
     montar_slide_duas_fotos_sobrepostas(foto_principal, foto_secundaria, titulo_fechamento, legenda_fechamento, s[3])
     return s
