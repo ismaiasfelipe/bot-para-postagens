@@ -82,6 +82,39 @@ def limpar_descricao_tecnica(descricao_bruta: str) -> str:
     return " ".join(texto.split())
 
 
+def extrair_dimensoes(descricao_tecnica: str) -> tuple[str, str]:
+    """
+    Extrai as medidas reais do produto a partir da ficha tecnica (mesmo
+    parse tab-separated de extrair_itens_inclusos em gerar_carrossel_completo.py):
+    CARACTERISTICAS tem as medidas do produto ABERTO/em uso (ex: "Lencol
+    De Cima 2,10m x 2,40m"), DIMENSAO tem as medidas do produto DOBRADO/
+    na embalagem (ex: "33cm x 38cm x 4cm"). Usadas no prompt de edicao de
+    imagem pra reduzir a IA "inventando" a proporcao entre o produto
+    dobrado (como normalmente aparece na foto crua de estampa) e o
+    produto aberto (como deve aparecer na cena do ambiente).
+
+    Mesma estrutura de 8 cabecalhos que extrair_itens_inclusos espera:
+    PRODUTO, DESCRICAO, MODELO, CARACTERISTICAS, COMPOSICAO, INFORMACOES
+    IMPORTANTES, PESO LIQ(kg), DIMENSAO. Devolve ("", "") se a estrutura
+    nao bater com o padrao esperado (documento diferente do padrao).
+    """
+    if not descricao_tecnica:
+        return "", ""
+    texto = descricao_tecnica.lstrip("﻿").strip()
+    celulas = [c.strip() for c in texto.split("\t")]
+
+    cabecalhos_esperados = ["PRODUTO", "DESCRIÇÃO", "MODELO", "CARACTERÍSTICAS"]
+    if len(celulas) < 8 or celulas[:4] != cabecalhos_esperados:
+        return "", ""
+
+    n_cabecalhos = 8
+    indice_caracteristicas = n_cabecalhos + 3
+    indice_dimensao = n_cabecalhos + 7
+    medidas_aberto = celulas[indice_caracteristicas] if len(celulas) > indice_caracteristicas else ""
+    medidas_dobrado = celulas[indice_dimensao] if len(celulas) > indice_dimensao else ""
+    return medidas_aberto.replace("\n", "; "), medidas_dobrado
+
+
 def montar_prompt_texto(produto: dict, marca: dict) -> str:
     """Prompt para o fallback de geracao pura por texto (sem fotos de referencia reais)."""
     cores = marca["cores"]
@@ -120,6 +153,28 @@ def montar_prompt_edicao(produto: dict, trocar_estampa: bool = False) -> str:
     descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
     contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
 
+    medidas_aberto, medidas_dobrado = extrair_dimensoes(produto.get("descricao_tecnica", ""))
+    instrucao_medidas = ""
+    if medidas_aberto:
+        instrucao_medidas = (
+            f"\n\nMEDIDAS REAIS DO PRODUTO ABERTO/EM USO (use pra manter a "
+            f"escala e as proporcoes corretas em relacao aos moveis/comodo "
+            f"da cena): {medidas_aberto}."
+        )
+        if medidas_dobrado:
+            instrucao_medidas += (
+                f" Medidas DOBRADO/na embalagem (so pra referencia de "
+                f"escala -- NAO e como o produto deve aparecer na foto "
+                f"final): {medidas_dobrado}."
+            )
+        instrucao_medidas += (
+            " O produto DEVE aparecer ABERTO/ESTENDIDO/em uso na cena (ex: "
+            "lencol/colcha estendido sobre a cama, cortina pendurada "
+            "esticada, toalha aberta) -- mesmo que a foto de referencia da "
+            "estampa mostre o tecido dobrado ou empilhado, a cena final "
+            "nao deve mostrar o produto dobrado."
+        )
+
     instrucao_estampa = (
         "A foto crua do tecido/estampa e de uma variante DIFERENTE da que "
         "aparece na foto do ambiente -- e uma troca de estampa proposital. "
@@ -137,7 +192,7 @@ def montar_prompt_edicao(produto: dict, trocar_estampa: bool = False) -> str:
     return (
         f"Voce recebeu foto(s) real(is) de referencia do produto "
         f"'{produto['nome']}' ({produto['categoria']}) de uma loja de "
-        f"enxovais.{contexto_produto}\n\n"
+        f"enxovais.{contexto_produto}{instrucao_medidas}\n\n"
         "Se houver uma foto do produto montado num ambiente (cama/quarto/casa): "
         "ela pode ter anotacoes de diagrama sobrepostas (setas, caixas de "
         "texto como 'Estampa 1'/'Estampa 2', linhas e numeros de medida em "
