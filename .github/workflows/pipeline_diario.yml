@@ -36,7 +36,7 @@ jobs:
 
       - name: Instalar dependencias
         if: steps.checar_data.outputs.prosseguir == 'true'
-        run: pip install python-dotenv requests google-genai google-cloud-storage google-auth Pillow
+        run: pip install python-dotenv requests google-genai google-cloud-storage google-auth Pillow numpy
 
       - name: Recriar credenciais_drive.json a partir do secret
         if: steps.checar_data.outputs.prosseguir == 'true'
