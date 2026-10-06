@@ -3,17 +3,226 @@
     {
       "id": "p001",
       "categoria": "infantil",
-      "nome": "toalha de banho infantil",
+      "nome": "colcha de malha infantil",
       "tags": [
         "infantil"
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
       "imagem_ambiente": null,
-      "imagem_estampa": null
+      "imagem_estampa": "banco_local/p001_variada_0.jpeg",
+      "fotos_variadas": [
+        "banco_local/p001_variada_0.jpeg",
+        "banco_local/p001_variada_1.jpeg"
+      ]
     },
     {
       "id": "p002",
+      "categoria": "infantil",
+      "nome": "lençol de malha infantil",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p002_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p002_variada_0.jpeg",
+        "banco_local/p002_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p003",
+      "categoria": "infantil",
+      "nome": "colcha cobre leito infantil",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p003_ambiente.png",
+      "imagem_estampa": "banco_local/p003_estampa.jpeg",
+      "fotos_variadas": []
+    },
+    {
+      "id": "p004",
+      "categoria": "infantil",
+      "nome": "colcha matelada infantil",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p004_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p004_variada_0.jpeg",
+        "banco_local/p004_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p005",
+      "categoria": "infantil",
+      "nome": "tapete infantil",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p005_ambiente.png",
+      "imagem_estampa": "banco_local/p005_estampa.png",
+      "fotos_variadas": [
+        "banco_local/p005_variada_0.jpeg",
+        "banco_local/p005_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p006",
+      "categoria": "infantil",
+      "nome": "toalha de banho infantil estampada",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p006_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p006_variada_0.jpeg",
+        "banco_local/p006_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p007",
+      "categoria": "infantil",
+      "nome": "toalha de banho infantil",
+      "tags": [
+        "infantil"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p007_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p007_variada_0.jpeg",
+        "banco_local/p007_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p008",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "manta de sofá",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p008_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p008_variada_0.jpeg",
+        "banco_local/p008_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p009",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "capa de sofá",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p009_ambiente.png",
+      "imagem_estampa": "banco_local/p009_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p009_variada_0.jpeg",
+        "banco_local/p009_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p010",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "cortina blackout longa",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p010_ambiente.png",
+      "imagem_estampa": "banco_local/p010_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p010_variada_0.jpeg",
+        "banco_local/p010_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p011",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "cortina blackout curta",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p011_ambiente.png",
+      "imagem_estampa": "banco_local/p011_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p011_variada_0.jpeg",
+        "banco_local/p011_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p012",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "cortina curta",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p012_ambiente.png",
+      "imagem_estampa": "banco_local/p012_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p012_variada_0.jpeg",
+        "banco_local/p012_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p013",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "tapete passadeira",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p013_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p013_variada_0.jpeg",
+        "banco_local/p013_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p014",
+      "categoria": "sofá (cortinas, tapetes e adereços)",
+      "nome": "tapete porta",
+      "tags": [
+        "sofá (cortinas, tapetes e adereços)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p014_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p014_variada_0.jpeg",
+        "banco_local/p014_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p015",
       "categoria": "sofá (cortinas, tapetes e adereços)",
       "nome": "tapete médio",
       "tags": [
@@ -21,11 +230,15 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
-      "imagem_ambiente": null,
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p015_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p015_variada_0.jpeg",
+        "banco_local/p015_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p003",
+      "id": "p016",
       "categoria": "sofá (cortinas, tapetes e adereços)",
       "nome": "tapete pequeno",
       "tags": [
@@ -33,11 +246,127 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
-      "imagem_ambiente": null,
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p016_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p016_variada_0.jpeg",
+        "banco_local/p016_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p004",
+      "id": "p017",
+      "categoria": "banho (banheiro)",
+      "nome": "toalha de piso",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p017_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p017_variada_0.jpeg",
+        "banco_local/p017_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p018",
+      "categoria": "banho (banheiro)",
+      "nome": "jogo de toalha",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p018_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p018_variada_0.jpeg",
+        "banco_local/p018_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p019",
+      "categoria": "banho (banheiro)",
+      "nome": "toalha de banho grande",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p019_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p019_variada_0.jpeg",
+        "banco_local/p019_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p020",
+      "categoria": "banho (banheiro)",
+      "nome": "jogo de tapete banheiro luxo",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p020_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p020_variada_0.jpeg",
+        "banco_local/p020_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p021",
+      "categoria": "banho (banheiro)",
+      "nome": "jogo de tapete banheiro pilão",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p021_ambiente.png",
+      "imagem_estampa": "banco_local/p021_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p021_variada_0.jpeg",
+        "banco_local/p021_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p022",
+      "categoria": "banho (banheiro)",
+      "nome": "roupão",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p022_ambiente.png",
+      "imagem_estampa": "banco_local/p022_estampa.jpeg",
+      "fotos_variadas": [
+        "banco_local/p022_variada_0.jpeg",
+        "banco_local/p022_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p023",
+      "categoria": "banho (banheiro)",
+      "nome": "toalha de rosto",
+      "tags": [
+        "banho (banheiro)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p023_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p023_variada_0.jpeg",
+        "banco_local/p023_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p024",
       "categoria": "banho (banheiro)",
       "nome": "toalha de banho",
       "tags": [
@@ -45,11 +374,334 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
-      "imagem_ambiente": null,
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p024_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p024_variada_0.jpeg",
+        "banco_local/p024_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p005",
+      "id": "p025",
+      "categoria": "mesa (cozinha)",
+      "nome": "jogo de tapete cozinha luxo",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p025_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p025_variada_0.jpeg",
+        "banco_local/p025_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p026",
+      "categoria": "mesa (cozinha)",
+      "nome": "pano de copa",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p026_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p026_variada_0.jpeg",
+        "banco_local/p026_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p027",
+      "categoria": "mesa (cozinha)",
+      "nome": "pano de prato",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p027_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p027_variada_0.jpeg",
+        "banco_local/p027_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p028",
+      "categoria": "mesa (cozinha)",
+      "nome": "toalha de mesa 6 cadeiras",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p028_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p028_variada_0.jpeg",
+        "banco_local/p028_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p029",
+      "categoria": "mesa (cozinha)",
+      "nome": "toalha de mesa 4 cadeiras",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p029_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p029_variada_0.jpeg",
+        "banco_local/p029_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p030",
+      "categoria": "mesa (cozinha)",
+      "nome": "jogo de cozinha",
+      "tags": [
+        "mesa (cozinha)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p030_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p030_variada_0.jpeg",
+        "banco_local/p030_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p031",
+      "categoria": "cama (quarto)",
+      "nome": "capa de colchão queen",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p031_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p031_variada_0.jpeg",
+        "banco_local/p031_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p032",
+      "categoria": "cama (quarto)",
+      "nome": "jogo de quarto solteiro",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p032_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p032_variada_0.jpeg",
+        "banco_local/p032_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p033",
+      "categoria": "cama (quarto)",
+      "nome": "jogo de quarto",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tJogo de Quarto Composê - Casal / Box\r\n\tJogo completo para quarto de casal, ideal para decoração elegante e aconchegante. Inclui colcha, cortina e fronhas coordenadas.\r\n\tColcha babado, fronhas + cortina\r\n\t01 Colcha casal 2,55m x 2,65m, (Babado 50cm)\r\n01 Cortina 3,00m x 1,80m\r\n02 Fronhas 70cm x 48cm\r\n\tTecido Sarja 80/20\r\n\tFácil de lavar, tecido em Algodão e Poliéster, resistente e com ótimo caimento. Ideal para uso diário, mantendo o quarto bonito e confortável.\r\n\t2,020\r\n\t33cm x 37cm x 8cm",
+      "imagem_ambiente": "banco_local/p033_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p033_variada_0.jpeg",
+        "banco_local/p033_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p034",
+      "categoria": "cama (quarto)",
+      "nome": "colcha matelada king",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p034_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p034_variada_0.jpeg",
+        "banco_local/p034_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p035",
+      "categoria": "cama (quarto)",
+      "nome": "lençol de malha super king",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p035_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p035_variada_0.jpeg",
+        "banco_local/p035_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p036",
+      "categoria": "cama (quarto)",
+      "nome": "colcha de malha king",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p036_ambiente.png",
+      "imagem_estampa": "banco_local/p036_estampa.jfif",
+      "fotos_variadas": [
+        "banco_local/p036_variada_0.jpeg",
+        "banco_local/p036_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p037",
+      "categoria": "cama (quarto)",
+      "nome": "colcha de malha queen",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p037_ambiente.png",
+      "imagem_estampa": "banco_local/p037_estampa.jfif",
+      "fotos_variadas": [
+        "banco_local/p037_variada_0.jpeg",
+        "banco_local/p037_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p038",
+      "categoria": "cama (quarto)",
+      "nome": "colcha de malha casal",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p038_ambiente.png",
+      "imagem_estampa": "banco_local/p038_estampa.jfif",
+      "fotos_variadas": [
+        "banco_local/p038_variada_0.jpeg",
+        "banco_local/p038_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p039",
+      "categoria": "cama (quarto)",
+      "nome": "capa de colchão casal",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p039_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p039_variada_0.jpeg",
+        "banco_local/p039_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p040",
+      "categoria": "cama (quarto)",
+      "nome": "capa de colchão solteiro",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p040_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p040_variada_0.jpeg"
+      ]
+    },
+    {
+      "id": "p041",
+      "categoria": "cama (quarto)",
+      "nome": "colcha cobre leito solteiro",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p041_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p041_variada_0.jpeg",
+        "banco_local/p041_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p042",
+      "categoria": "cama (quarto)",
+      "nome": "colcha matelada queen",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p042_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p042_variada_0.jpeg",
+        "banco_local/p042_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p043",
+      "categoria": "cama (quarto)",
+      "nome": "colcha matelada casal",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p043_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p043_variada_0.jpeg",
+        "banco_local/p043_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p044",
+      "categoria": "cama (quarto)",
+      "nome": "colcha matelada solteiro",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p044_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p044_variada_0.jpeg",
+        "banco_local/p044_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p045",
       "categoria": "cama (quarto)",
       "nome": "colcha casal pique queen",
       "tags": [
@@ -57,11 +709,15 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
-      "imagem_ambiente": "banco_local/p005_ambiente.png",
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p045_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p045_variada_0.jpeg",
+        "banco_local/p045_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p006",
+      "id": "p046",
       "categoria": "cama (quarto)",
       "nome": "colcha preguiada sarja casal/box",
       "tags": [
@@ -69,11 +725,15 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tColcha Casal Preguiada Sarja - Casal / Box\r\n\tColcha casal queen em sarja com babado, ideal para deixar o quarto elegante e aconchegante. Acompanha duas fronhas no mesmo tecido, garantindo harmonia e praticidade.\r\n\tBabado\r\n\t01 Colcha casal 2,55m x 2,65m, (Babado 50cm)\r\n02 Fronhas 70cm x 50cm\r\n\tTecido Sarja 80/20\r\n\tColcha resistente e de ótimo caimento, fácil de lavar e secagem rápida. Ideal para uso diário, proporcionando beleza e conforto ao ambiente.\r\n\t1,100\r\n\t33cm x 38cm x 4cm",
-      "imagem_ambiente": "banco_local/p006_ambiente.png",
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p046_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p046_variada_0.jpeg",
+        "banco_local/p046_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p007",
+      "id": "p047",
       "categoria": "cama (quarto)",
       "nome": "cobertor/manta",
       "tags": [
@@ -81,11 +741,15 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "",
-      "imagem_ambiente": "banco_local/p007_ambiente.png",
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p047_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p047_variada_0.jpeg",
+        "banco_local/p047_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p008",
+      "id": "p048",
       "categoria": "cama (quarto)",
       "nome": "coberdrom solteiro",
       "tags": [
@@ -94,22 +758,14 @@
       "cor_predominante": "",
       "descricao_tecnica": "",
       "imagem_ambiente": null,
-      "imagem_estampa": null
+      "imagem_estampa": "banco_local/p048_variada_0.jpeg",
+      "fotos_variadas": [
+        "banco_local/p048_variada_0.jpeg",
+        "banco_local/p048_variada_1.jpeg"
+      ]
     },
     {
-      "id": "p009",
-      "categoria": "cama (quarto)",
-      "nome": "jogo de quato",
-      "tags": [
-        "cama (quarto)"
-      ],
-      "cor_predominante": "",
-      "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tJogo de Quarto Composê - Casal / Box\r\n\tJogo completo para quarto de casal, ideal para decoração elegante e aconchegante. Inclui colcha, cortina e fronhas coordenadas.\r\n\tColcha babado, fronhas + cortina\r\n\t01 Colcha casal 2,55m x 2,65m, (Babado 50cm)\r\n01 Cortina 3,00m x 1,80m\r\n02 Fronhas 70cm x 48cm\r\n\tTecido Sarja 80/20\r\n\tFácil de lavar, tecido em Algodão e Poliéster, resistente e com ótimo caimento. Ideal para uso diário, mantendo o quarto bonito e confortável.\r\n\t2,020\r\n\t33cm x 37cm x 8cm",
-      "imagem_ambiente": "banco_local/p009_ambiente.png",
-      "imagem_estampa": null
-    },
-    {
-      "id": "p010",
+      "id": "p049",
       "categoria": "cama (quarto)",
       "nome": "lençol casal 4 pçs",
       "tags": [
@@ -117,8 +773,76 @@
       ],
       "cor_predominante": "",
       "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tLençol Casal 4Pçs - Casal / Box\r\n\tJogo de lençol completo para cama box casal, ideal para quem busca conforto e praticidade no dia a dia. Inclui lençol de cima, lençol de baixo com elástico e duas fronhas coordenadas.\r\n\t4 pçs\r\n\t01 Lençol De Cima 2,10m x 2,40m.\r\n01 Lençol De Baixo Com Elástico 2,10m x 2,40m.\r\n02 Fronhas 70cm x 50cm.\r\n\tTecido PA 80/20\r\n\tConfeccionado em tecido de qualidade, proporciona maciez, resistência e praticidade. O lençol com elástico se ajusta perfeitamente ao colchão, garantindo maior conforto. Fácil de lavar e com cores que permanecem vivas por muito mais tempo.\r\n\t1,100\r\n\t33cm x 38cm x 4cm",
-      "imagem_ambiente": "banco_local/p010_ambiente.png",
-      "imagem_estampa": null
+      "imagem_ambiente": "banco_local/p049_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p049_variada_0.jpeg",
+        "banco_local/p049_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p050",
+      "categoria": "cama (quarto)",
+      "nome": "lençol de malha king size",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p050_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p050_variada_0.jpeg",
+        "banco_local/p050_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p051",
+      "categoria": "cama (quarto)",
+      "nome": "lençol de malha box queen",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p051_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p051_variada_0.jpeg",
+        "banco_local/p051_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p052",
+      "categoria": "cama (quarto)",
+      "nome": "lençol de malha casal",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p052_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p052_variada_0.jpeg",
+        "banco_local/p052_variada_1.jpeg"
+      ]
+    },
+    {
+      "id": "p053",
+      "categoria": "cama (quarto)",
+      "nome": "lençol de malha solteiro",
+      "tags": [
+        "cama (quarto)"
+      ],
+      "cor_predominante": "",
+      "descricao_tecnica": "",
+      "imagem_ambiente": "banco_local/p053_ambiente.png",
+      "imagem_estampa": null,
+      "fotos_variadas": [
+        "banco_local/p053_variada_0.jpeg",
+        "banco_local/p053_variada_1.jpeg"
+      ]
     }
   ]
 }
