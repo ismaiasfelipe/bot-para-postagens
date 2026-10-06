@@ -160,8 +160,8 @@ def montar_banco_de_produtos() -> dict:
                 servico, subpastas.get("produto no ambiente"),
                 PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_ambiente"
             )
-            caminho_estampa = _baixar_primeira_imagem(
-                servico, subpastas.get("estampas"),
+            caminho_estampa = _baixar_estampa_se_unica(
+                servico, subpastas.get("estampas"), nome_produto,
                 PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_estampa"
             )
 
@@ -206,6 +206,33 @@ def montar_banco_de_produtos() -> dict:
             contador += 1
 
     return {"produtos": produtos}
+
+
+def _baixar_estampa_se_unica(servico, id_subpasta, nome_produto: str, caminho_base: Path) -> str | None:
+    """
+    Baixa a foto de "estampas" SO SE houver exatamente 1 imagem na
+    subpasta. Descoberto em 06/10/2026: varios produtos tem a pasta
+    "estampas" com VARIAS fotos sem nome que identifique qual e qual
+    (ex: "WhatsApp Image ...jpeg" ou "5.png"/"6.png"/"9.png" -- parece
+    ser um catalogo de padroes/cores disponiveis pro fornecedor, nao
+    "a" estampa desse produto especifico). Baixar a primeira ao acaso
+    nesses casos injeta uma referencia de tecido ERRADA no prompt de
+    geracao (gerar_carrossel_gemini.montar_prompt_edicao), fazendo a IA
+    gerar um produto com o padrao/cor errados -- pior do que nao ter
+    estampa nenhuma, ja que imagem_ambiente sozinha ja da uma referencia
+    fiel. Com mais de 1 imagem, melhor pular e confiar so na ambiente.
+    """
+    if not id_subpasta:
+        return None
+    imagens = listar_imagens(servico, id_subpasta)
+    if not imagens:
+        return None
+    if len(imagens) > 1:
+        print(f"  [!] {nome_produto}: pasta 'estampas' tem {len(imagens)} fotos "
+              "sem como saber qual e a certa -- pulando imagem_estampa, "
+              "usando so imagem_ambiente")
+        return None
+    return _baixar_primeira_imagem(servico, id_subpasta, caminho_base)
 
 
 def _baixar_primeira_imagem(servico, id_subpasta, caminho_base: Path) -> str | None:
