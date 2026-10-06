@@ -57,13 +57,14 @@ jobs:
               partes_base.append(g._part_de_bytes(dados, mime_type))
           prompt_juiz = g.montar_prompt_verificacao_hero(produto, len(referencias))
 
-          for nome_modelo in ['gemini-2.5-flash-image', 'gemini-2.5-flash']:
-              print(f'--- juiz com modelo: {nome_modelo} ---')
-              try:
-                  resposta = client.models.generate_content(model=nome_modelo, contents=partes_base + [prompt_juiz])
-                  print(repr(resposta.text))
-              except Exception as e:
-                  print('ERRO:', repr(e))
+          for nome_modelo in ['gemini-2.5-flash-image', 'gemini-3.8-flash']:
+              print(f'--- juiz com modelo: {nome_modelo} (3x pra checar consistencia) ---')
+              for i in range(3):
+                  try:
+                      resposta = client.models.generate_content(model=nome_modelo, contents=partes_base + [prompt_juiz])
+                      print(f'  [{i+1}]', repr(resposta.text))
+                  except Exception as e:
+                      print(f'  [{i+1}] ERRO:', repr(e))
           "
 
       - name: Subir resultado como artifact
