@@ -105,14 +105,25 @@ def _slide_paths(pasta_saida: str, n: int = 4) -> list[str]:
 
 
 def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None, itens_inclusos=None):
+    # Ordem/escolha de slides fiel ao wireframe real (exemplo de carrosseis -
+    # ex1): hero (1), itens inclusos (2), grade de estampas (3 -- NAO 4,
+    # como estava antes) e fechamento com 2 fotos sobrepostas (4). O antigo
+    # slide 3 (montar_slide_detalhes, zoom com linha apontando) nao
+    # corresponde a nenhum slide do ex1 -- foi substituido por
+    # montar_slide_duas_fotos_sobrepostas, ja construida a partir desse
+    # mesmo wireframe (ex1/slide4) mas que so estava sendo usada em
+    # promocao_relampago.
     s = _slide_paths(pasta_saida)
     itens_inclusos = itens_inclusos or extrair_itens_inclusos(produto.get("descricao_tecnica", "")) or [produto["nome"]]
     fotos_estampas = fotos_estampas or [foto_principal]
+    foto_secundaria = produto.get("imagem_estampa") or produto.get("imagem_ambiente") or foto_principal
 
     montar_slide_hero(foto_principal, produto["nome"], s[0])
     montar_slide_itens_inclusos(foto_principal, itens_inclusos, s[1])
-    montar_slide_detalhes(foto_principal, "Produto de alta qualidade feito com carinho e dedicação!", s[2])
-    montar_slide_variedade(fotos_estampas, s[3])
+    montar_slide_variedade(fotos_estampas, s[2])
+    montar_slide_duas_fotos_sobrepostas(
+        foto_principal, foto_secundaria, "IL VARIEDADES", "Chame no direct e garanta o seu!", s[3]
+    )
     return s
 
 
