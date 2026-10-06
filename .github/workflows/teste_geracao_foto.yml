@@ -13,6 +13,9 @@ on:
         required: true
         default: "p010"
 
+permissions:
+  contents: write
+
 jobs:
   testar:
     runs-on: ubuntu-latest
@@ -52,3 +55,15 @@ jobs:
           name: teste-foto-${{ inputs.produto_id }}
           path: saida/teste_*
           retention-days: 7
+
+      - name: Publicar resultado num branch pra visualizacao rapida
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan teste-visualizacao
+          git rm -rf --quiet . || true
+          mkdir -p resultado
+          cp saida/teste_*.png resultado/ 2>/dev/null || echo "nenhum png gerado" > resultado/vazio.txt
+          git add resultado
+          git commit -m "Resultado do teste manual (${{ inputs.produto_id }})"
+          git push --force origin teste-visualizacao
