@@ -7,7 +7,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": null,
       "imagem_estampa": "banco_local/p001_variada_0.jpeg",
@@ -23,7 +23,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "azul",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p002_ambiente.png",
       "imagem_estampa": null,
@@ -39,7 +39,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p003_ambiente.png",
       "imagem_estampa": "banco_local/p003_estampa.jpeg",
@@ -52,7 +52,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "verde",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p004_ambiente.png",
       "imagem_estampa": null,
@@ -68,7 +68,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p005_ambiente.png",
       "imagem_estampa": "banco_local/p005_estampa.png",
@@ -84,7 +84,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p006_ambiente.png",
       "imagem_estampa": null,
@@ -100,7 +100,7 @@
       "tags": [
         "infantil"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p007_ambiente.png",
       "imagem_estampa": null,
@@ -116,7 +116,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "vermelho",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p008_ambiente.png",
       "imagem_estampa": null,
@@ -132,7 +132,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "vermelho",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p009_ambiente.png",
       "imagem_estampa": "banco_local/p009_estampa.jpeg",
@@ -148,7 +148,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "cinza",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p010_ambiente.png",
       "imagem_estampa": "banco_local/p010_estampa.jpeg",
@@ -164,7 +164,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "branco",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p011_ambiente.png",
       "imagem_estampa": "banco_local/p011_estampa.jpeg",
@@ -180,7 +180,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "preto",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p012_ambiente.png",
       "imagem_estampa": "banco_local/p012_estampa.jpeg",
@@ -196,7 +196,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "cinza",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p013_ambiente.png",
       "imagem_estampa": null,
@@ -212,7 +212,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "bege",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p014_ambiente.png",
       "imagem_estampa": null,
@@ -228,7 +228,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "marrom",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p015_ambiente.png",
       "imagem_estampa": null,
@@ -244,7 +244,7 @@
       "tags": [
         "sofá (cortinas, tapetes e adereços)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p016_ambiente.png",
       "imagem_estampa": null,
@@ -260,7 +260,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p017_ambiente.png",
       "imagem_estampa": null,
@@ -276,7 +276,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p018_ambiente.png",
       "imagem_estampa": null,
@@ -292,7 +292,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "preto",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p019_ambiente.png",
       "imagem_estampa": null,
@@ -308,7 +308,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "marrom",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p020_ambiente.png",
       "imagem_estampa": null,
@@ -324,7 +324,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "bege",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p021_ambiente.png",
       "imagem_estampa": "banco_local/p021_estampa.jpeg",
@@ -340,7 +340,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "azul",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p022_ambiente.png",
       "imagem_estampa": "banco_local/p022_estampa.jpeg",
@@ -356,7 +356,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "lilás",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p023_ambiente.png",
       "imagem_estampa": null,
@@ -372,7 +372,7 @@
       "tags": [
         "banho (banheiro)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "azul",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p024_ambiente.png",
       "imagem_estampa": null,
@@ -388,7 +388,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "marrom",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p025_ambiente.png",
       "imagem_estampa": null,
@@ -404,7 +404,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p026_ambiente.png",
       "imagem_estampa": null,
@@ -420,7 +420,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "branco",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p027_ambiente.png",
       "imagem_estampa": null,
@@ -436,7 +436,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p028_ambiente.png",
       "imagem_estampa": null,
@@ -452,7 +452,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p029_ambiente.png",
       "imagem_estampa": null,
@@ -468,7 +468,7 @@
       "tags": [
         "mesa (cozinha)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p030_ambiente.png",
       "imagem_estampa": null,
@@ -484,7 +484,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p031_ambiente.png",
       "imagem_estampa": null,
@@ -500,7 +500,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p032_ambiente.png",
       "imagem_estampa": null,
@@ -516,7 +516,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tJogo de Quarto Composê - Casal / Box\r\n\tJogo completo para quarto de casal, ideal para decoração elegante e aconchegante. Inclui colcha, cortina e fronhas coordenadas.\r\n\tColcha babado, fronhas + cortina\r\n\t01 Colcha casal 2,55m x 2,65m, (Babado 50cm)\r\n01 Cortina 3,00m x 1,80m\r\n02 Fronhas 70cm x 48cm\r\n\tTecido Sarja 80/20\r\n\tFácil de lavar, tecido em Algodão e Poliéster, resistente e com ótimo caimento. Ideal para uso diário, mantendo o quarto bonito e confortável.\r\n\t2,020\r\n\t33cm x 37cm x 8cm",
       "imagem_ambiente": "banco_local/p033_ambiente.png",
       "imagem_estampa": null,
@@ -532,7 +532,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p034_ambiente.png",
       "imagem_estampa": null,
@@ -548,7 +548,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p035_ambiente.png",
       "imagem_estampa": null,
@@ -564,7 +564,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p036_ambiente.png",
       "imagem_estampa": "banco_local/p036_estampa.jfif",
@@ -580,7 +580,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p037_ambiente.png",
       "imagem_estampa": "banco_local/p037_estampa.jfif",
@@ -596,7 +596,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p038_ambiente.png",
       "imagem_estampa": "banco_local/p038_estampa.jfif",
@@ -612,7 +612,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "azul",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p039_ambiente.png",
       "imagem_estampa": null,
@@ -628,7 +628,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p040_ambiente.png",
       "imagem_estampa": null,
@@ -643,7 +643,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p041_ambiente.png",
       "imagem_estampa": null,
@@ -659,7 +659,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p042_ambiente.png",
       "imagem_estampa": null,
@@ -675,7 +675,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "rosa",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p043_ambiente.png",
       "imagem_estampa": null,
@@ -691,7 +691,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p044_ambiente.png",
       "imagem_estampa": null,
@@ -707,7 +707,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p045_ambiente.png",
       "imagem_estampa": null,
@@ -723,7 +723,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tColcha Casal Preguiada Sarja - Casal / Box\r\n\tColcha casal queen em sarja com babado, ideal para deixar o quarto elegante e aconchegante. Acompanha duas fronhas no mesmo tecido, garantindo harmonia e praticidade.\r\n\tBabado\r\n\t01 Colcha casal 2,55m x 2,65m, (Babado 50cm)\r\n02 Fronhas 70cm x 50cm\r\n\tTecido Sarja 80/20\r\n\tColcha resistente e de ótimo caimento, fácil de lavar e secagem rápida. Ideal para uso diário, proporcionando beleza e conforto ao ambiente.\r\n\t1,100\r\n\t33cm x 38cm x 4cm",
       "imagem_ambiente": "banco_local/p046_ambiente.png",
       "imagem_estampa": null,
@@ -739,7 +739,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "verde",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p047_ambiente.png",
       "imagem_estampa": null,
@@ -755,7 +755,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "bege",
       "descricao_tecnica": "",
       "imagem_ambiente": null,
       "imagem_estampa": "banco_local/p048_variada_0.jpeg",
@@ -771,7 +771,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "﻿PRODUTO\r\n\tDESCRIÇÃO\r\n\tMODELO\r\n\tCARACTERÍSTICAS\r\n\tCOMPOSIÇÃO\r\n\tINFORMAÇÕES IMPORTANTES\r\n\tPESO LIQ(kg)\r\n\tDIMENSÃO\r\n\tLençol Casal 4Pçs - Casal / Box\r\n\tJogo de lençol completo para cama box casal, ideal para quem busca conforto e praticidade no dia a dia. Inclui lençol de cima, lençol de baixo com elástico e duas fronhas coordenadas.\r\n\t4 pçs\r\n\t01 Lençol De Cima 2,10m x 2,40m.\r\n01 Lençol De Baixo Com Elástico 2,10m x 2,40m.\r\n02 Fronhas 70cm x 50cm.\r\n\tTecido PA 80/20\r\n\tConfeccionado em tecido de qualidade, proporciona maciez, resistência e praticidade. O lençol com elástico se ajusta perfeitamente ao colchão, garantindo maior conforto. Fácil de lavar e com cores que permanecem vivas por muito mais tempo.\r\n\t1,100\r\n\t33cm x 38cm x 4cm",
       "imagem_ambiente": "banco_local/p049_ambiente.png",
       "imagem_estampa": null,
@@ -787,7 +787,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p050_ambiente.png",
       "imagem_estampa": null,
@@ -803,7 +803,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p051_ambiente.png",
       "imagem_estampa": null,
@@ -819,7 +819,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "estampado",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p052_ambiente.png",
       "imagem_estampa": null,
@@ -835,7 +835,7 @@
       "tags": [
         "cama (quarto)"
       ],
-      "cor_predominante": "",
+      "cor_predominante": "azul",
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p053_ambiente.png",
       "imagem_estampa": null,
