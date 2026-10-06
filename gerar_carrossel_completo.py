@@ -104,7 +104,7 @@ def _slide_paths(pasta_saida: str, n: int = 4) -> list[str]:
 # --- construtores de cada formato -----------------------------------------
 
 
-def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None, itens_inclusos=None):
+def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None, itens_inclusos=None, foto_estampa_close=None):
     # Ordem/escolha de slides fiel ao wireframe real (exemplo de carrosseis -
     # ex1): hero (1), itens inclusos (2), grade de estampas (3 -- NAO 4,
     # como estava antes) e fechamento com 2 fotos sobrepostas (4). O antigo
@@ -117,20 +117,18 @@ def _construir_vitrine(produto, pasta_saida, foto_principal, fotos_estampas=None
     itens_inclusos = itens_inclusos or extrair_itens_inclusos(produto.get("descricao_tecnica", "")) or [produto["nome"]]
     fotos_estampas = fotos_estampas or [foto_principal]
 
-    # Slide 4 combina a foto hero (gerada) com uma foto REAL complementar,
-    # com o texto batendo com o que de fato aparece -- nao da pra usar
-    # imagem_estampa/imagem_ambiente sem checar qual delas existe (desde
-    # 06/10/2026 o conectar_drive.py nao inventa mais imagem_estampa a
-    # partir de fotos_variadas ambiguas, entao quando o campo vem
-    # preenchido ele e confiavel). Preferencia: imagem_ambiente (produto
-    # no ambiente real) > imagem_estampa (tecido real) > repete a propria
-    # foto hero (sem alegar variedade nenhuma, so reforco visual).
-    if produto.get("imagem_ambiente"):
-        foto_secundaria = produto["imagem_ambiente"]
-        titulo_fechamento, legenda_fechamento = "NO SEU AMBIENTE", "Veja como fica na sua casa de verdade"
-    elif produto.get("imagem_estampa"):
-        foto_secundaria = produto["imagem_estampa"]
-        titulo_fechamento, legenda_fechamento = "NOSSA ESTAMPA", "Tecido real, sem surpresas"
+    # Slide 4 combina a foto hero (gerada) com um close-up REAL do tecido
+    # (foto_estampa_close -- gerado e verificado via IA, ver
+    # executar_pipeline_semanal.obter_foto_estampa_close). NUNCA usa
+    # imagem_ambiente/imagem_estampa cru direto aqui: confirmado
+    # visualmente que essas fotos de referencia sempre vem com diagrama
+    # de medida/etiquetas sobrepostos, nao sao apresentaveis num slide.
+    # Sem close aprovado (produto sem referencia, ou reprovado na
+    # verificacao), repete a foto principal com texto neutro -- nunca
+    # alega variedade que nao existe.
+    if foto_estampa_close:
+        foto_secundaria = foto_estampa_close
+        titulo_fechamento, legenda_fechamento = "NOSSA ESTAMPA", "Tecido real, de perto"
     else:
         foto_secundaria = foto_principal
         titulo_fechamento, legenda_fechamento = "IL VARIEDADES", "Chame no direct e garanta o seu!"

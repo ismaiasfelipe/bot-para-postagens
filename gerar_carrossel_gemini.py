@@ -638,12 +638,14 @@ def gerar_foto_hero_com_verificacao(
             client = _obter_cliente()
             resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=prompt)
             caminho_atual = None
-            for i, parte in enumerate(resposta.candidates[0].content.parts):
-                if parte.inline_data is not None:
-                    caminho_atual = str(PASTA_SAIDA / f"{nome}_{i}.png")
-                    with open(caminho_atual, "wb") as f:
-                        f.write(parte.inline_data.data)
-                    break
+            candidato = resposta.candidates[0] if resposta.candidates else None
+            if candidato is not None and candidato.content is not None:
+                for i, parte in enumerate(candidato.content.parts):
+                    if parte.inline_data is not None:
+                        caminho_atual = str(PASTA_SAIDA / f"{nome}_{i}.png")
+                        with open(caminho_atual, "wb") as f:
+                            f.write(parte.inline_data.data)
+                        break
             return caminho_atual  # sem referencia real, nao da pra verificar fidelidade
 
         if caminho_atual is None:
@@ -661,6 +663,99 @@ def gerar_foto_hero_com_verificacao(
     print(
         f"  aviso: '{produto['id']}' nao passou na verificacao apos "
         f"{max_tentativas} tentativas -- pulando este produto"
+    )
+    return None
+
+
+def montar_prompt_estampa_close(produto: dict) -> str:
+    """
+    Prompt pra gerar um CLOSE-UP/macro do tecido real (so a textura/
+    padrao, preenchendo o quadro) -- NAO o produto inteiro como na foto
+    hero. Criado em 06/10/2026: as fotos cruas de referencia
+    (imagem_estampa/imagem_ambiente) sempre vem com diagrama de medida e
+    etiquetas tipo "Estampa 1" sobrepostos (confirmado visualmente em
+    varios produtos), entao nao da pra mostrar elas direto num slide --
+    essa funcao gera uma versao limpa e aproximada, do mesmo jeito que
+    gerar_foto_hero_com_verificacao gera a cena inteira limpa.
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    return (
+        f"Voce recebeu foto(s) real(is) do produto '{produto['nome']}' "
+        f"({produto['categoria']}) de uma loja de enxovais.{contexto_produto}\n\n"
+        "Gere uma nova fotografia PROFISSIONAL, estilo e-commerce, em "
+        "CLOSE-UP/MACRO do TECIDO: um enquadramento bem aproximado "
+        "mostrando so uma porcao do tecido (textura, padrao/estampa e "
+        "cores reais em detalhe), preenchendo quase todo o quadro -- NAO "
+        "a peca inteira, NAO o produto montado num ambiente.\n"
+        "(a) siga fielmente o padrao, cor e textura reais do tecido "
+        "mostrados nas referencias, sem inventar um padrao novo;\n"
+        "(b) NAO inclua diagramas, setas, textos, numeros de medida, "
+        "etiquetas ('Estampa 1', etc.) ou qualquer marcacao sobreposta "
+        "das fotos de referencia -- a cena final deve ser limpa, sem "
+        "nenhum elemento grafico alem do proprio tecido;\n"
+        "(c) iluminacao natural suave, leve profundidade de campo, sem "
+        "pessoas, sem logotipo, sem texto.\n"
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def gerar_foto_estampa_close_com_verificacao(
+    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Gera um close-up/macro limpo do tecido real do produto (ver
+    montar_prompt_estampa_close), usando imagem_estampa (preferencia --
+    ja e um close do tecido cru) ou imagem_ambiente como referencia, com
+    o mesmo filtro automatico de qualidade da foto hero
+    (verificar_foto_hero, com retry). Usado como 2a foto do slide de
+    fechamento do formato "vitrine" (ver executar_pipeline_semanal.
+    obter_foto_estampa_close), pra dar variedade de verdade sem usar a
+    foto de referencia crua (que tem diagrama sobreposto) nem inventar
+    uma foto de outro produto.
+
+    Retorna None se o produto nao tiver nenhuma referencia real, ou se
+    reprovar em todas as tentativas -- o chamador deve cair pra repetir
+    a foto principal nesse caso, nunca usar a imagem crua ou uma
+    reprovada.
+    """
+    referencias = [
+        c for c in (produto.get("imagem_estampa"), produto.get("imagem_ambiente")) if c
+    ]
+    if not referencias:
+        return None
+
+    nome_arquivo = nome_arquivo or f"{produto['id']}_estampa_close"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando close da estampa de {produto['id']}...")
+        prompt = montar_prompt_estampa_close(produto)
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: close da estampa de '{produto['id']}' nao passou na "
+        f"verificacao apos {max_tentativas} tentativas -- caindo pra "
+        f"repetir a foto principal no slide"
     )
     return None
 
@@ -767,7 +862,17 @@ def _gerar_e_retornar_caminho(prompt: str, caminhos_referencia: list[str], nome_
     partes.append(prompt)
 
     resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=partes)
-    for i, parte in enumerate(resposta.candidates[0].content.parts):
+    candidato = resposta.candidates[0] if resposta.candidates else None
+    if candidato is None or candidato.content is None:
+        # Gemini pode devolver content=None (ex: finish_reason
+        # PROHIBITED_CONTENT, bloqueio de seguranca) em vez de so "sem
+        # imagem" -- sem essa checagem o .content.parts explode com
+        # AttributeError e derruba o pipeline inteiro em vez de so pular
+        # pra proxima tentativa, como o retry ja espera.
+        motivo = getattr(candidato, "finish_reason", "desconhecido") if candidato else "sem candidato"
+        print(f"  -> nenhuma imagem retornada pela API (motivo: {motivo})")
+        return None
+    for i, parte in enumerate(candidato.content.parts):
         if parte.inline_data is not None:
             caminho = PASTA_SAIDA / f"{nome_arquivo}_{i}.png"
             with open(caminho, "wb") as f:
@@ -806,7 +911,12 @@ def _obter_cliente():
 
 def _salvar_resposta(resposta, nome_arquivo: str):
     salvou_alguma = False
-    for i, parte in enumerate(resposta.candidates[0].content.parts):
+    candidato = resposta.candidates[0] if resposta.candidates else None
+    if candidato is None or candidato.content is None:
+        motivo = getattr(candidato, "finish_reason", "desconhecido") if candidato else "sem candidato"
+        print(f"  -> nenhuma imagem retornada pela API (motivo: {motivo})")
+        return
+    for i, parte in enumerate(candidato.content.parts):
         if parte.inline_data is not None:
             caminho = PASTA_SAIDA / f"{nome_arquivo}_{i}.png"
             with open(caminho, "wb") as f:

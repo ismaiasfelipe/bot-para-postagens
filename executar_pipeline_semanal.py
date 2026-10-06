@@ -57,7 +57,12 @@ from calendario_campanhas import (
     MAPEAMENTO_PADRAO_FORMATOS,
 )
 from tema_semana import carregar_tema, CAMPANHA_PADRAO_MARCA
-from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao, gerar_legenda_ia, extrair_preco
+from gerar_carrossel_gemini import (
+    gerar_foto_hero_com_verificacao,
+    gerar_foto_estampa_close_com_verificacao,
+    gerar_legenda_ia,
+    extrair_preco,
+)
 from gerar_carrossel_completo import gerar_carrossel
 from montar_story import (
     montar_story_abas_onduladas,
@@ -356,6 +361,32 @@ def obter_foto_hero(produto: dict) -> str | None:
     return str(caminho_cache)
 
 
+def obter_foto_estampa_close(produto: dict) -> str | None:
+    """
+    Reaproveita um close-up verificado do tecido em cache_hero/ se
+    existir pra essa mesma combinacao de produto+referencias (mesma
+    chave de obter_foto_hero, so com sufixo); senao gera via Gemini
+    (gerar_foto_estampa_close_com_verificacao). So usado pelo formato
+    "vitrine" hoje, pro slide de fechamento (ver montar_dados_formato).
+
+    Retorna None se o produto nao tiver referencia real ou reprovar --
+    o chamador (_construir_vitrine) cai pra repetir a foto principal
+    nesse caso.
+    """
+    pasta_cache = Path("cache_hero")
+    pasta_cache.mkdir(exist_ok=True)
+    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close.png"
+    if caminho_cache.exists():
+        return str(caminho_cache)
+
+    aprovado = gerar_foto_estampa_close_com_verificacao(produto)
+    if aprovado is None:
+        return None
+
+    caminho_cache.write_bytes(Path(aprovado).read_bytes())
+    return str(caminho_cache)
+
+
 def escolher_blocos_stories(historico: list[dict]) -> list:
     """Gira pelos 6 blocos de story de 1-foto-so, 2 diferentes por post (ver BLOCOS_STORY)."""
     n = len(historico)
@@ -472,7 +503,13 @@ def montar_dados_formato(
                 for p, foto in todos
             ]
         }
-    return {"foto_principal": foto_hero}  # vitrine, novidade_semana, detalhe_textura
+    if formato == "vitrine":
+        # Slide de fechamento (duas fotos sobrepostas) usa um close-up
+        # real do tecido como 2a foto quando disponivel (ver
+        # obter_foto_estampa_close/_construir_vitrine) -- None aqui faz
+        # _construir_vitrine cair pra repetir a foto principal.
+        return {"foto_principal": foto_hero, "foto_estampa_close": obter_foto_estampa_close(produto)}
+    return {"foto_principal": foto_hero}  # novidade_semana, detalhe_textura
 
 
 def _dia_semana_hoje() -> str:
