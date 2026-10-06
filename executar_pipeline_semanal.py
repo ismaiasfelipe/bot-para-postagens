@@ -287,6 +287,25 @@ def _obter_produtos_extras(
     return extras
 
 
+def _obter_produtos_extras_mesma_cor(
+    candidatos: list[dict], produto_principal: dict, quantidade: int
+) -> list[tuple[dict, str]]:
+    """
+    Como _obter_produtos_extras, mas so aceita candidatos com a MESMA
+    cor_predominante do produto principal -- usado por 'paleta_em_foco',
+    que precisa de produtos que combinem de verdade em cor (ver
+    enriquecer_cores.py), nao so "o proximo da lista com foto aprovada".
+    Sem cor_predominante classificada no produto principal, devolve []
+    direto -- o chamador trata igual a nao achar extras suficientes
+    (cai pro formato generico, ver rodar()).
+    """
+    cor = produto_principal.get("cor_predominante")
+    if not cor:
+        return []
+    mesma_cor = [c for c in candidatos if c.get("cor_predominante") == cor]
+    return _obter_produtos_extras(mesma_cor, produto_principal["id"], quantidade)
+
+
 def obter_foto_hero(produto: dict) -> str | None:
     """
     Reaproveita uma foto ja verificada em cache/hero/{id}.png se existir;
@@ -414,7 +433,10 @@ def montar_dados_formato(
         todos = [(produto, foto_hero)] + extras[:3]
         rotulos = [p["nome"][:18] for p, _ in todos]
         fotos = [foto for _, foto in todos]
-        cor_paleta = (produto.get("cor_predominante") or produto["categoria"]).strip()
+        # extras ja vem filtrados pela mesma cor de produto (ver
+        # _obter_produtos_extras_mesma_cor) -- so cai no generico se
+        # produto nao tiver sido classificado ainda (enriquecer_cores.py).
+        cor_paleta = produto.get("cor_predominante") or "nossa seleção"
         pares = [
             (fotos[0], rotulos[0], fotos[1], rotulos[1]),
             (fotos[2], rotulos[2], fotos[3], rotulos[3]),
@@ -484,7 +506,10 @@ def rodar(publicar: bool = False) -> None:
     extras = []
     quantidade_extra = QUANTIDADE_EXTRAS_POR_FORMATO.get(formato, 0)
     if quantidade_extra:
-        extras = _obter_produtos_extras(candidatos, produto["id"], quantidade_extra)
+        if formato == "paleta_em_foco":
+            extras = _obter_produtos_extras_mesma_cor(candidatos, produto, quantidade_extra)
+        else:
+            extras = _obter_produtos_extras(candidatos, produto["id"], quantidade_extra)
         if len(extras) < quantidade_extra:
             print(
                 f"  aviso: so achou {len(extras)}/{quantidade_extra} produtos extras pro "
