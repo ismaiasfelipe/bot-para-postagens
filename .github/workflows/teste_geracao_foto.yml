@@ -32,37 +32,38 @@ jobs:
         run: |
           python3 -c "
           import json, os
-          from gerar_carrossel_gemini import (
-              montar_prompt_edicao, _gerar_e_retornar_caminho, verificar_foto_hero,
-          )
+          import gerar_carrossel_gemini as g
 
           with open('produtos_reais.json') as f:
               banco = json.load(f)
           produto_id = '${{ inputs.produto_id }}'
           produto = next(p for p in banco['produtos'] if p['id'] == produto_id)
-          print('Testando produto:', produto['nome'])
           referencias = [c for c in (produto.get('imagem_ambiente'), produto.get('imagem_estampa')) if c]
-          print('referencias:', referencias)
 
-          prompt = montar_prompt_edicao(produto)
-          print('--- PROMPT (primeiros 300 chars) ---')
-          print(prompt[:300])
-
-          caminho = _gerar_e_retornar_caminho(prompt, referencias, f'teste_{produto_id}')
+          prompt = g.montar_prompt_edicao(produto)
+          caminho = g._gerar_e_retornar_caminho(prompt, referencias, f'teste_{produto_id}')
           print('CAMINHO GERADO:', caminho)
-          if caminho:
-              tamanho = os.path.getsize(caminho)
-              print('TAMANHO DO ARQUIVO (bytes):', tamanho)
-              try:
-                  from PIL import Image
-                  img = Image.open(caminho)
-                  img.verify()
-                  print('IMAGEM VALIDA, dimensoes:', Image.open(caminho).size)
-              except Exception as e:
-                  print('ERRO AO ABRIR IMAGEM:', repr(e))
+          if not caminho:
+              raise SystemExit('geracao falhou, nada pra verificar')
+          print('TAMANHO (bytes):', os.path.getsize(caminho))
 
-              passou, motivo = verificar_foto_hero(caminho, referencias, produto)
-              print('VERIFICACAO passou:', passou, '| motivo:', motivo)
+          # comparacao: juiz com MODELO_IMAGEM (atual) vs um modelo de
+          # texto/visao padrao, na MESMA imagem ja gerada (so 2 chamadas
+          # de texto, nao gera imagem de novo)
+          client = g._obter_cliente()
+          partes_base = []
+          for c in [caminho] + referencias:
+              dados, mime_type = g._carregar_bytes_imagem(c)
+              partes_base.append(g._part_de_bytes(dados, mime_type))
+          prompt_juiz = g.montar_prompt_verificacao_hero(produto, len(referencias))
+
+          for nome_modelo in ['gemini-2.5-flash-image', 'gemini-2.5-flash']:
+              print(f'--- juiz com modelo: {nome_modelo} ---')
+              try:
+                  resposta = client.models.generate_content(model=nome_modelo, contents=partes_base + [prompt_juiz])
+                  print(repr(resposta.text))
+              except Exception as e:
+                  print('ERRO:', repr(e))
           "
 
       - name: Subir resultado como artifact
