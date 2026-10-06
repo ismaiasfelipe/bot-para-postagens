@@ -36,10 +36,22 @@ jobs:
 
       - name: Instalar dependencias
         if: steps.checar_data.outputs.prosseguir == 'true'
-        run: pip install python-dotenv requests google-genai google-cloud-storage Pillow
+        run: pip install python-dotenv requests google-genai google-cloud-storage google-auth Pillow numpy
+
+      - name: Recriar credenciais_drive.json a partir do secret
+        if: steps.checar_data.outputs.prosseguir == 'true'
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > credenciais_drive.json
 
       - name: Rodar pipeline (publica de verdade)
         if: steps.checar_data.outputs.prosseguir == 'true'
+        env:
+          IG_APP_ID: ${{ secrets.IG_APP_ID }}
+          IG_APP_SECRET: ${{ secrets.IG_APP_SECRET }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python executar_pipeline_semanal.py --publicar
 
       - name: Salvar historico e cache de fotos atualizados

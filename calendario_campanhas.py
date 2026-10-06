@@ -332,21 +332,80 @@ def campanhas_ativas_na_semana(data_referencia: date | None = None) -> list[dict
     return sazonais
 
 
-def montar_legenda(campanha: dict | None, produto_nome: str) -> str:
+def _resumo_qualidade(descricao_tecnica: str, limite: int = 140) -> str:
+    """
+    Extrai uma frase curta pra usar na legenda a partir da ficha tecnica
+    REAL do produto (puxada do Drive), em vez da frase generica de
+    qualidade de sempre.
+
+    A ficha tecnica vem como um dump tab-separated de cabecalhos+valores
+    na mesma ordem (PRODUTO, DESCRIÇÃO, MODELO, CARACTERÍSTICAS, ... --
+    mesmo formato que extrair_itens_inclusos, em gerar_carrossel_completo.py,
+    ja parseia pro campo CARACTERÍSTICAS). Quando bate esse formato, usa o
+    campo DESCRIÇÃO direto; senao (texto solto, formato diferente) cai
+    pra pegar a 1a frase que mencione material/acabamento, ou so a 1a frase.
+
+    Sem ficha tecnica (ou sem nada aproveitavel), devolve "" e o
+    chamador cai pro texto generico.
+    """
+    if not descricao_tecnica:
+        return ""
+    texto = descricao_tecnica.lstrip("﻿").strip()
+    if not texto:
+        return ""
+
+    celulas = [c.strip() for c in texto.split("\t")]
+    cabecalhos_esperados = ["PRODUTO", "DESCRIÇÃO", "MODELO", "CARACTERÍSTICAS"]
+    n_cabecalhos = 8  # ver extrair_itens_inclusos, mesma ficha padrao
+    if len(celulas) > n_cabecalhos + 1 and celulas[:4] == cabecalhos_esperados:
+        valor = " ".join(celulas[n_cabecalhos + 1].split())  # coluna DESCRIÇÃO
+        if valor:
+            return valor[:limite]
+
+    texto_corrido = " ".join(texto.split())
+    palavras_chave = [
+        "algodão", "algodao", "microfibra", "percal", "gramatura", "fios",
+        "macio", "macia", "aveludado", "antialérgico", "antialergico",
+        "renda", "bordado", "100%",
+    ]
+    frases = [f.strip() for f in texto_corrido.replace(";", ".").split(".") if f.strip()]
+    for frase in frases:
+        if any(chave in frase.lower() for chave in palavras_chave):
+            return frase[:limite]
+    return frases[0][:limite] if frases else ""
+
+
+def montar_legenda(campanha: dict | None, produto: dict | str) -> str:
     """
     Monta a legenda final combinando o tom/CTA/hashtags da campanha ativa
-    (se houver) com as hashtags fixas da marca. Sem campanha ativa, usa um
-    texto generico no tom padrao da marca.
+    (se houver) com as hashtags fixas da marca, e com um trecho real da
+    ficha tecnica do produto (se houver) em vez da frase generica de
+    qualidade de sempre -- ver _resumo_qualidade.
+
+    produto: aceita o dict completo do produto (pra aproveitar a ficha
+    tecnica real) ou so o nome como string (retrocompatibilidade) --
+    nesse caso cai direto pro texto generico, sem ficha tecnica.
     """
+    if isinstance(produto, dict):
+        produto_nome = produto["nome"]
+        qualidade = _resumo_qualidade(produto.get("descricao_tecnica", ""))
+    else:
+        produto_nome = produto
+        qualidade = ""
+
     if campanha:
         abertura = campanha.get("tom_detalhe", "")
         corpo = f"{abertura}\n\nConheça o nosso {produto_nome}." if abertura else f"Conheça o nosso {produto_nome}."
+        if qualidade:
+            corpo += f" {qualidade.rstrip('.')}."
         return (
             f"{corpo}\n\n{campanha['cta']}\n\n"
             f"{campanha['hashtags_extras']} {HASHTAGS_FIXAS}"
         )
+
+    frase_qualidade = qualidade or "com o cuidado e a qualidade de sempre"
     return (
-        f"Conheça o nosso {produto_nome}, com o cuidado e a qualidade de sempre 🤍\n\n"
+        f"Conheça o nosso {produto_nome}, {frase_qualidade} 🤍\n\n"
         f"Chame no direct e garanta o seu!\n\n{HASHTAGS_FIXAS}"
     )
 

@@ -12,6 +12,13 @@ O QUE ESTE SCRIPT FAZ
      "inventar" um padrao novo baseado so em texto/cores da marca).
    - Se so tiver uma das duas, ou nenhuma: cai pra geracao por texto (menos
      fiel, usado como fallback).
+   - Se tiver "fotos_variadas" (varias fotos do produto disperso/
+     empilhado/dobrado, nao em cena de ambiente): opcionalmente gera uma
+     composicao nesse estilo via gerar_composicao_dispersa_com_verificacao,
+     reaproveitando o arranjo REAL dessas fotos como referencia (nao
+     inventa a composicao do zero) -- usado quando o formato/post pede
+     esse tipo de foto mais solta de produto, nao entra no rodizio
+     automatico da foto hero pra nao duplicar custo de geracao.
 3. Salva os arquivos gerados na pasta ./saida/
 
 COMO RODAR
@@ -367,6 +374,10 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
     produtos so com imagem_estampa (sem imagem_ambiente) as vezes saiam
     com cenas genericas de decoracao completamente desconectadas do
     produto real (ex: p002 "tapete medio" saiu com foto de quarto/cama).
+
+    Criterio 3 (enquadramento/zoom) adicionado depois -- closes muito
+    aproximados na intencao de mostrar a estampa estavam saindo
+    distorcidos (ver filtro pedido pelo usuario).
     """
     return (
         f"Voce e um revisor de qualidade de fotos de produto para "
@@ -383,10 +394,15 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
         "diferente, deve ser REPROVADA.\n"
         "2. O padrao/estampa e a cor do tecido na IMAGEM 1 batem com as "
         "referencias reais fornecidas? Um padrao/cor sem nenhuma relacao "
-        "com o real deve ser REPROVADO.\n\n"
+        "com o real deve ser REPROVADO.\n"
+        "3. O enquadramento da IMAGEM 1 esta correto -- nem um zoom/corte "
+        "tao aproximado na estampa que distorce o padrao do tecido ou "
+        "deixa irreconhecivel o que e o produto, nem tao afastado que o "
+        "produto fique pequeno demais na cena? Um corte exagerado demais "
+        "deve ser REPROVADO.\n\n"
         "Responda EXATAMENTE nesse formato, sem mais nada:\n"
         "LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
-        "'NAO' se reprovada por qualquer um dos dois motivos acima.\n"
+        "'NAO' se reprovada por qualquer um dos tres motivos acima.\n"
         "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
         "poder corrigir). Se SIM, deixe a linha 2 vazia."
     )
@@ -482,6 +498,92 @@ def gerar_foto_hero_com_verificacao(
         f"{max_tentativas} tentativas -- pulando este produto"
     )
     return None
+
+
+def montar_prompt_composicao_dispersa(produto: dict, n_referencias: int) -> str:
+    """
+    Prompt pra gerar uma foto do produto reaproveitando a COMPOSICAO real
+    das fotos em "fotos variadas" (produto disperso, empilhado ou dobrado
+    sobre uma superficie) -- em vez da cena de "ambiente" inteiro (cama
+    montada, quarto decorado) que montar_prompt_edicao gera. Criado em
+    05/10/2026 a pedido do usuario: usar "fotos variadas" como referencia
+    de composicao pra esse tipo de enquadramento mais solto/de produto.
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    return (
+        f"Voce recebeu {n_referencias} foto(s) real(is) do produto "
+        f"'{produto['nome']}' ({produto['categoria']}) de uma loja de "
+        f"enxovais, mostrando o produto numa composicao solta -- disperso, "
+        f"empilhado ou dobrado sobre uma superficie, NAO montado num "
+        f"ambiente inteiro (sem cama feita, sem quarto decorado ao redor)."
+        f"{contexto_produto}\n\n"
+        "Gere uma nova fotografia de produto, profissional, para "
+        "e-commerce, reaproveitando o MESMO TIPO de composicao das fotos "
+        "de referencia (produto disperso/empilhado/dobrado, nao 'vestido' "
+        "num ambiente completo): "
+        "(a) siga fielmente o padrao, cor e escala real do tecido "
+        "mostrados nas referencias, sem inventar um padrao novo; "
+        "(b) mantenha o mesmo estilo de arranjo das referencias (pilha "
+        "dobrada, peca solta sobre a superficie, etc.) -- nao troque por "
+        "uma cena de ambiente com cama/sofa montado; "
+        "(c) fundo neutro ou levemente texturizado (mesa de madeira clara, "
+        "superficie off-white), iluminacao natural suave, estilo elegante "
+        "e sofisticado, sem pessoas, sem logotipo, sem texto. "
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def gerar_composicao_dispersa_com_verificacao(
+    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Gera uma foto do produto em composicao dispersa/empilhada/dobrada,
+    usando "fotos_variadas" do produto como referencia de arranjo (ver
+    montar_prompt_composicao_dispersa), com o mesmo filtro automatico de
+    qualidade da foto hero (verifica_foto_hero, com retry).
+
+    Retorna None se o produto nao tiver "fotos_variadas" no banco, ou se
+    reprovar em todas as tentativas -- o chamador deve pular esse
+    produto/formato nesse caso, nunca publicar a imagem reprovada.
+    """
+    referencias = produto.get("fotos_variadas") or []
+    if not referencias:
+        return None
+
+    nome_arquivo = nome_arquivo or f"{produto['id']}_disperso"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando composicao dispersa de {produto['id']}...")
+        prompt = montar_prompt_composicao_dispersa(produto, len(referencias))
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: composicao dispersa de '{produto['id']}' nao passou na "
+        f"verificacao apos {max_tentativas} tentativas -- revise visualmente "
+        f"{caminho_atual} antes de usar"
+    )
+    return caminho_atual
 
 
 def _part_de_bytes(dados: bytes, mime_type: str):

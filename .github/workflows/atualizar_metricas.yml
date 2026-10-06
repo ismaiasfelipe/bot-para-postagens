@@ -1,0 +1,41 @@
+name: Atualizar métricas de performance
+
+# Roda todo dia as 9h no horario de Elói Mendes/MG (America/Sao_Paulo,
+# UTC-3 -- 12:00 UTC = 9:00 BRT), depois do pipeline diario (7h), pra dar
+# tempo dos posts/stories do dia terem alguma metrica. So atualiza posts/
+# stories dos ultimos 7 dias (ver relatorio_instagram.py) -- stories mais
+# antigos que isso ja expiraram e nao tem mais metrica disponivel.
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install python-dotenv requests
+
+      - name: Buscar metricas atualizadas
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: python relatorio_instagram.py
+
+      - name: Salvar historico atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add historico_publicacoes.json
+          git diff --cached --quiet && echo "nada mudou" || git commit -m "Atualiza métricas de performance [skip ci]"
+          git push

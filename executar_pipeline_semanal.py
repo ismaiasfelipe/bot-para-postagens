@@ -13,9 +13,15 @@ Roda o pipeline inteiro uma vez:
 4. Gera a foto "hero" do produto via Gemini -- REAPROVEITA se ja existir
    saida/{produto_id}_0.png (evita custo/gasto repetido)
 5. Monta os 4 slides do carrossel (gerar_carrossel_completo.py)
-6. Escreve a legenda no tom de voz da campanha (ou generico)
-7. Se publicar=True: sobe pro storage e publica de verdade no Instagram,
-   e registra no historico
+6. Monta 2 Stories (montar_story.py) reaproveitando a MESMA foto hero --
+   regra "2 stories por carrossel" do planejamento original. Gira entre
+   os 6 blocos de story que precisam so de 1 foto (ver BLOCOS_STORY);
+   os outros 4 blocos (texto puro, duas fotos, trio de circulos, grade)
+   exigem curadoria manual de fotos extras e nao entram no rodizio
+   automatico -- mesma logica dos 5 formatos de carrossel manuais.
+7. Escreve a legenda no tom de voz da campanha (ou generico)
+8. Se publicar=True: sobe pro storage e publica de verdade no Instagram
+   (carrossel + os 2 stories), e registra tudo no historico
 
 ESCOPO ATUAL -- IMPORTANTE
 ----------------------------
@@ -48,12 +54,62 @@ from calendario_campanhas import CAMPANHAS, campanhas_ativas_na_semana, montar_l
 from tema_semana import carregar_tema
 from gerar_carrossel_gemini import gerar_foto_hero_com_verificacao
 from gerar_carrossel_completo import gerar_carrossel
-from upload_storage import enviar_carrossel
-from publicar_instagram import publicar_carrossel
+from montar_story import (
+    montar_story_abas_onduladas,
+    montar_story_banner_topo,
+    montar_story_cartao_app,
+    montar_story_circulo_fita,
+    montar_story_foto_minimal,
+    montar_story_oval_vertical,
+)
+from upload_storage import enviar_carrossel, enviar_para_storage
+from publicar_instagram import publicar_carrossel, publicar_story
 
 ARQUIVO_PRODUTOS = "produtos_reais.json"
 ARQUIVO_HISTORICO = "historico_publicacoes.json"
 FORMATOS_SIMPLES_GENERICOS = ["vitrine", "novidade_semana", "detalhe_textura"]
+
+
+def _construir_story_banner_topo(foto_hero, produto, campanha, caminho):
+    texto = campanha["nome"].upper() if campanha else "NOVIDADE"
+    montar_story_banner_topo(foto_hero, texto, produto["nome"], caminho)
+
+
+def _construir_story_foto_minimal(foto_hero, produto, campanha, caminho):
+    montar_story_foto_minimal(foto_hero, produto["nome"], caminho)
+
+
+def _construir_story_oval_vertical(foto_hero, produto, campanha, caminho):
+    texto = campanha["nome"].upper() if campanha else "DESTAQUE"
+    montar_story_oval_vertical(foto_hero, texto, "Toque de elegância", "Confira mais", caminho)
+
+
+def _construir_story_circulo_fita(foto_hero, produto, campanha, caminho):
+    etiqueta = campanha["nome"][:10] if campanha else "Novo"
+    montar_story_circulo_fita(foto_hero, etiqueta, produto["nome"], "Inspiração do dia", caminho)
+
+
+def _construir_story_abas_onduladas(foto_hero, produto, campanha, caminho):
+    cta = campanha["cta"] if campanha else "Chame no direct"
+    montar_story_abas_onduladas(foto_hero, produto["nome"], cta, caminho)
+
+
+def _construir_story_cartao_app(foto_hero, produto, campanha, caminho):
+    texto = campanha["nome"].upper() if campanha else "NOVA COLEÇÃO"
+    montar_story_cartao_app(foto_hero, texto, produto["nome"], "Confira os detalhes", caminho)
+
+
+# So os blocos que precisam de 1 unica foto (a propria foto hero do
+# carrossel) entram no rodizio automatico -- ver nota no docstring do
+# modulo.
+BLOCOS_STORY = [
+    _construir_story_banner_topo,
+    _construir_story_foto_minimal,
+    _construir_story_oval_vertical,
+    _construir_story_circulo_fita,
+    _construir_story_abas_onduladas,
+    _construir_story_cartao_app,
+]
 
 
 def _carregar_produtos() -> list[dict]:
@@ -182,6 +238,27 @@ def obter_foto_hero(produto: dict) -> str | None:
     return str(caminho_cache)
 
 
+def escolher_blocos_stories(historico: list[dict]) -> list:
+    """Gira pelos 6 blocos de story de 1-foto-so, 2 diferentes por post (ver BLOCOS_STORY)."""
+    n = len(historico)
+    indice1 = n % len(BLOCOS_STORY)
+    indice2 = (n + 1) % len(BLOCOS_STORY)
+    return [BLOCOS_STORY[indice1], BLOCOS_STORY[indice2]]
+
+
+def montar_stories_do_post(
+    pasta_saida: str, foto_hero: str, produto: dict, campanha: dict | None, historico: list[dict]
+) -> list[str]:
+    pasta_stories = Path(pasta_saida) / "stories"
+    pasta_stories.mkdir(parents=True, exist_ok=True)
+    caminhos = []
+    for i, construtor in enumerate(escolher_blocos_stories(historico), start=1):
+        caminho = str(pasta_stories / f"story{i}.png")
+        construtor(foto_hero, produto, campanha, caminho)
+        caminhos.append(caminho)
+    return caminhos
+
+
 def montar_dados_formato(formato: str, campanha: dict | None, foto_hero: str) -> dict:
     if formato == "campanha_sazonal":
         return {
@@ -233,11 +310,15 @@ def rodar(publicar: bool = False) -> None:
     print(f"\nProduto escolhido: {produto['id']} - {produto['nome']}")
     print(f"Foto hero: {foto_hero}")
 
+    pasta_saida = f"saida/carrossel_{produto['id']}_{formato}"
     dados_formato = montar_dados_formato(formato, campanha, foto_hero)
-    slides = gerar_carrossel(formato, produto["id"], **dados_formato)
+    slides = gerar_carrossel(formato, produto["id"], pasta_saida=pasta_saida, **dados_formato)
     print(f"Slides montados: {slides}")
 
-    legenda = montar_legenda(campanha, produto["nome"])
+    stories = montar_stories_do_post(pasta_saida, foto_hero, produto, campanha, historico)
+    print(f"Stories montados: {stories}")
+
+    legenda = montar_legenda(campanha, produto)
     print(f"\nLegenda:\n{legenda}\n")
 
     if not publicar:
@@ -248,12 +329,17 @@ def rodar(publicar: bool = False) -> None:
     post_id = publicar_carrossel(urls, legenda)
     print(f"Publicado com sucesso! ID do post: {post_id}")
 
+    urls_stories = [enviar_para_storage(caminho) for caminho in stories]
+    story_ids = [publicar_story(url) for url in urls_stories]
+    print(f"Stories publicados com sucesso! IDs: {story_ids}")
+
     historico.append({
         "data": date.today().isoformat(),
         "produto_id": produto["id"],
         "campanha": campanha["chave"] if campanha else None,
         "formato": formato,
         "post_id": post_id,
+        "story_ids": story_ids,
     })
     _salvar_historico(historico)
 
