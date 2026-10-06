@@ -282,4 +282,11 @@ input:focus, select:focus {
 }
 .item-historico-data { color: var(--cinza-texto); font-size: 0.8rem; }
 .item-historico-detalhe { color: var(--rosa-quartzo); font-weight: 600; font-size: 0.85rem; margin-top: 2px; }
+.item-historico-metricas {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--roxo-nobre);
+}
 .item-historico-rodape { color: var(--cinza-texto); font-size: 0.78rem; margin-top: 4px; }

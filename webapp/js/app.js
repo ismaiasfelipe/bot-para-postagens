@@ -219,29 +219,53 @@ async function carregarRelatorio() {
 
   const totalPosts = historico.length;
   const totalStories = historico.reduce((soma, h) => soma + (h.story_ids?.length || 0), 0);
-  const contagemFormato = {};
-  historico.forEach((h) => {
-    contagemFormato[h.formato] = (contagemFormato[h.formato] || 0) + 1;
-  });
+  const totalAlcance = historico.reduce((soma, h) => soma + (h.metricas?.reach || 0), 0);
+  const totalCurtidas = historico.reduce((soma, h) => soma + (h.metricas?.likes || 0), 0);
 
-  const resumoHtml = `
-    <div class="resumo-cards">
-      <div class="card-stat">
-        <span class="card-stat-numero">${totalPosts}</span>
-        <span class="card-stat-label">carrosséis publicados</span>
-      </div>
-      <div class="card-stat">
-        <span class="card-stat-numero">${totalStories}</span>
-        <span class="card-stat-label">stories publicados</span>
-      </div>
+  const cardsBasicos = `
+    <div class="card-stat">
+      <span class="card-stat-numero">${totalPosts}</span>
+      <span class="card-stat-label">carrosséis publicados</span>
+    </div>
+    <div class="card-stat">
+      <span class="card-stat-numero">${totalStories}</span>
+      <span class="card-stat-label">stories publicados</span>
     </div>
   `;
+  // metricas so existem depois que .github/workflows/atualizar_metricas.yml
+  // rodar pelo menos 1x (ver relatorio_instagram.py) -- sem isso, so mostra
+  // os 2 cards basicos acima.
+  const cardsMetricas =
+    totalAlcance || totalCurtidas
+      ? `
+    <div class="card-stat">
+      <span class="card-stat-numero">${formatarNumero(totalAlcance)}</span>
+      <span class="card-stat-label">alcance total</span>
+    </div>
+    <div class="card-stat">
+      <span class="card-stat-numero">${formatarNumero(totalCurtidas)}</span>
+      <span class="card-stat-label">curtidas totais</span>
+    </div>
+  `
+      : "";
+
+  const resumoHtml = `<div class="resumo-cards">${cardsBasicos}${cardsMetricas}</div>`;
 
   const linhasHtml = [...historico]
     .reverse()
     .map((h) => {
       const nomeFormato = NOMES_FORMATO[h.formato] || h.formato || "—";
       const nStories = h.story_ids?.length || 0;
+      const m = h.metricas;
+      const metricasHtml = m
+        ? `<div class="item-historico-metricas">
+            ${m.reach != null ? `<span>👁 ${formatarNumero(m.reach)}</span>` : ""}
+            ${m.likes != null ? `<span>❤ ${formatarNumero(m.likes)}</span>` : ""}
+            ${m.comments != null ? `<span>💬 ${formatarNumero(m.comments)}</span>` : ""}
+            ${m.saved != null ? `<span>🔖 ${formatarNumero(m.saved)}</span>` : ""}
+          </div>`
+        : "";
+
       return `
         <div class="item-historico">
           <div class="item-historico-topo">
@@ -251,6 +275,7 @@ async function carregarRelatorio() {
           <div class="item-historico-detalhe">
             ${escapeHtml(nomeFormato)}${h.campanha ? ` · ${escapeHtml(h.campanha)}` : ""}
           </div>
+          ${metricasHtml}
           <div class="item-historico-rodape">
             post ${escapeHtml(h.post_id || "—")}${nStories ? ` · ${nStories} stories` : ""}
           </div>
@@ -260,6 +285,11 @@ async function carregarRelatorio() {
     .join("");
 
   container.innerHTML = `${resumoHtml}<div class="lista-historico">${linhasHtml}</div>`;
+}
+
+function formatarNumero(n) {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".0", "")}k`;
+  return String(n);
 }
 
 function escapeHtml(texto) {
