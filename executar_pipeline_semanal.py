@@ -60,7 +60,9 @@ from tema_semana import carregar_tema, CAMPANHA_PADRAO_MARCA
 from gerar_carrossel_gemini import (
     gerar_foto_hero_com_verificacao,
     gerar_foto_composta_ambiente_com_verificacao,
+    gerar_foto_composta_variante_com_verificacao,
     gerar_foto_estampa_close_com_verificacao,
+    gerar_foto_estampa_close_variante_com_verificacao,
     gerar_legenda_ia,
     extrair_preco,
 )
@@ -444,6 +446,37 @@ def _obter_foto_composta(produto: dict, caminho_ambiente: str, sufixo_cache: str
     return str(caminho_cache)
 
 
+def _obter_foto_composta_variante(produto: dict, caminho_ambiente: str, sufixo_cache: str) -> str | None:
+    """
+    Igual a _obter_foto_composta, mas usa uma estampa real DIFERENTE da
+    ja usada no hero (ver gerar_carrossel_gemini.
+    gerar_foto_composta_variante_com_verificacao) -- pra dar variedade de
+    estampa de verdade entre os slides, nao so de ambiente. Criado em
+    07/10/2026 a pedido do usuario ("tente usar outras estampas sem ser
+    essa, variando entre os slides"): a maioria dos produtos tem varias
+    estampas reais do mesmo modelo em fotos_variadas, so nao estavam
+    sendo usadas pra variar.
+
+    Retorna None se o produto nao tiver fotos_variadas ou reprovar --
+    o chamador deve cair pro _obter_foto_composta de mesma estampa.
+    """
+    pasta_cache = Path("cache_hero")
+    pasta_cache.mkdir(exist_ok=True)
+    assinatura_ambiente = hashlib.sha1(caminho_ambiente.encode("utf-8")).hexdigest()[:8]
+    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_{sufixo_cache}_{assinatura_ambiente}.png"
+    if caminho_cache.exists():
+        return str(caminho_cache)
+
+    aprovado = gerar_foto_composta_variante_com_verificacao(
+        produto, caminho_ambiente, nome_arquivo=f"{produto['id']}_{sufixo_cache}"
+    )
+    if aprovado is None:
+        return None
+
+    caminho_cache.write_bytes(Path(aprovado).read_bytes())
+    return str(caminho_cache)
+
+
 def obter_foto_hero(produto: dict) -> str | None:
     """
     Foto principal do produto. Forma PRINCIPAL (desde 06/10/2026): compoe
@@ -486,16 +519,33 @@ def obter_foto_estampa_close(produto: dict) -> str | None:
     """
     Reaproveita um close-up verificado do tecido em cache_hero/ se
     existir pra essa mesma combinacao de produto+referencias (mesma
-    chave de obter_foto_hero, so com sufixo); senao gera via Gemini
-    (gerar_foto_estampa_close_com_verificacao). So usado pelo formato
-    "vitrine" hoje, pro slide de fechamento (ver montar_dados_formato).
+    chave de obter_foto_hero, so com sufixo); senao gera via Gemini. So
+    usado pelo formato "vitrine" hoje, pro slide de fechamento (ver
+    montar_dados_formato).
 
-    Retorna None se o produto nao tiver referencia real ou reprovar --
-    o chamador (_construir_vitrine) cai pra repetir a foto principal
-    nesse caso.
+    Tenta primeiro uma estampa DIFERENTE da ja usada no hero
+    (gerar_foto_estampa_close_variante_com_verificacao -- precisa de
+    fotos_variadas), pra dar variedade real de estampa no carrossel em
+    vez de repetir sempre a mesma; se o produto nao tiver fotos_variadas
+    ou a geracao reprovar, cai pro close-up de mesma estampa
+    (gerar_foto_estampa_close_com_verificacao).
+
+    Retorna None se o produto nao tiver nenhuma referencia real ou tudo
+    reprovar -- o chamador (_construir_vitrine) cai pra repetir a foto
+    principal nesse caso.
     """
     pasta_cache = Path("cache_hero")
     pasta_cache.mkdir(exist_ok=True)
+
+    if produto.get("fotos_variadas"):
+        caminho_cache_variante = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close_variante.png"
+        if caminho_cache_variante.exists():
+            return str(caminho_cache_variante)
+        aprovado = gerar_foto_estampa_close_variante_com_verificacao(produto)
+        if aprovado is not None:
+            caminho_cache_variante.write_bytes(Path(aprovado).read_bytes())
+            return str(caminho_cache_variante)
+
     caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close.png"
     if caminho_cache.exists():
         return str(caminho_cache)
@@ -516,14 +566,27 @@ def obter_foto_ambiente_variacao(produto: dict) -> str | None:
     da usada em obter_foto_hero (mesma pasta/categoria, outra foto da
     biblioteca -- ver _escolher_foto_ambiente_variacao).
 
+    Tenta primeiro uma estampa DIFERENTE da ja usada no hero
+    (_obter_foto_composta_variante -- precisa de fotos_variadas), pra dar
+    variedade real de estampa alem da variedade de ambiente; se o
+    produto nao tiver fotos_variadas ou a geracao reprovar, cai pra
+    repetir a mesma estampa do hero num ambiente diferente
+    (_obter_foto_composta).
+
     Retorna None se a pasta de ambiente da categoria tiver menos de 2
-    fotos (sem uma 2a opcao de verdade), ou se reprovar na verificacao --
-    o chamador (_construir_vitrine) cai pra reaproveitar a foto principal
-    nesse caso.
+    fotos (sem uma 2a opcao de verdade), ou se tudo reprovar na
+    verificacao -- o chamador (_construir_vitrine) cai pra reaproveitar
+    a foto principal nesse caso.
     """
     foto_ambiente = _escolher_foto_ambiente_variacao(produto)
     if not foto_ambiente:
         return None
+
+    if produto.get("fotos_variadas"):
+        composta_variante = _obter_foto_composta_variante(produto, foto_ambiente, "ambiente_var_estampa")
+        if composta_variante:
+            return composta_variante
+
     return _obter_foto_composta(produto, foto_ambiente, "ambiente_var")
 
 

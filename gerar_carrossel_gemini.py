@@ -601,19 +601,19 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
     )
 
 
-def verificar_foto_hero(imagem_gerada: str, referencias: list[str], produto: dict) -> tuple[bool, str]:
+def _verificar_com_prompt(prompt_texto: str, imagem_gerada: str, referencias: list[str]) -> tuple[bool, str]:
     """
-    Juiz geral (nao especifico de troca de estampa): confere se a foto
-    gerada realmente retrata o produto certo, pra evitar cenas genericas
-    desconectadas da referencia real. So texto de resposta, sem gerar
-    imagem -- bem mais barato que uma geracao nova.
+    Nucleo generico do 'juiz': manda a imagem gerada + referencias + um
+    prompt de verificacao pro Gemini e parseia a resposta SIM/NAO + motivo.
+    Fatorado de verificar_foto_hero em 07/10/2026 pra ser reaproveitado
+    por outros juizes dedicados (ver montar_prompt_verificacao_variante).
     """
     client = _obter_cliente()
     partes = []
     for caminho in [imagem_gerada] + referencias:
         dados, mime_type = _carregar_bytes_imagem(caminho)
         partes.append(_part_de_bytes(dados, mime_type))
-    partes.append(montar_prompt_verificacao_hero(produto, len(referencias)))
+    partes.append(prompt_texto)
 
     resposta = client.models.generate_content(model=MODELO_IMAGEM, contents=partes)
     texto = (resposta.text or "").strip()
@@ -621,6 +621,18 @@ def verificar_foto_hero(imagem_gerada: str, referencias: list[str], produto: dic
     passou = bool(linhas) and linhas[0].strip().upper().startswith("SIM")
     motivo = linhas[1].strip() if len(linhas) > 1 else ""
     return passou, motivo
+
+
+def verificar_foto_hero(imagem_gerada: str, referencias: list[str], produto: dict) -> tuple[bool, str]:
+    """
+    Juiz geral (nao especifico de troca de estampa): confere se a foto
+    gerada realmente retrata o produto certo, pra evitar cenas genericas
+    desconectadas da referencia real. So texto de resposta, sem gerar
+    imagem -- bem mais barato que uma geracao nova.
+    """
+    return _verificar_com_prompt(
+        montar_prompt_verificacao_hero(produto, len(referencias)), imagem_gerada, referencias
+    )
 
 
 def montar_prompt_composicao_ambiente(produto: dict) -> str:
@@ -766,6 +778,219 @@ def gerar_foto_composta_ambiente_com_verificacao(
         f"  aviso: composicao em ambiente de '{produto['id']}' nao passou "
         f"na verificacao apos {max_tentativas} tentativas -- caindo pro "
         f"fallback"
+    )
+    return None
+
+
+def montar_prompt_composicao_ambiente_variante(produto: dict) -> str:
+    """
+    Variante de montar_prompt_composicao_ambiente que usa uma OUTRA
+    estampa real do mesmo produto (fotos_variadas -- foto com varias
+    estampas desse modelo embaladas, ja usada em outras partes do
+    pipeline) em vez de repetir sempre a mesma estampa de imagem_estampa/
+    imagem_ambiente. Criado em 07/10/2026 a pedido do usuario: "voce so
+    usou uma estampa, que ainda e a que esta no exemplo de produto no
+    ambiente, tente usar outras estampas sem ser essa, variando entre os
+    slides" -- a maioria dos produtos (50/51 no catalogo) realmente tem
+    varias estampas reais diferentes do mesmo modelo disponiveis em
+    fotos_variadas, so nao estavam sendo usadas pra variar os slides.
+
+    3 imagens de referencia esperadas, NESSA ORDEM: (1) a foto real
+    "principal" ja usada noutro slide (ambiente/estampa) -- serve so de
+    referencia de escala/caimento/construcao, o padrao dela deve ser
+    EVITADO aqui; (2) a foto com varias estampas desse modelo embaladas
+    (fotos_variadas) -- o modelo escolhe UMA estampa diferente dali; (3)
+    foto limpa da biblioteca de ambientes (cena-base).
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    medidas_aberto, _ = extrair_dimensoes(produto.get("descricao_tecnica", ""))
+    instrucao_medidas = (
+        f" Use as medidas reais do produto aberto/em uso ({medidas_aberto}) "
+        "pra manter escala e proporcoes corretas em relacao aos moveis/comodo."
+        if medidas_aberto else ""
+    )
+
+    itens = extrair_itens_inclusos(produto.get("descricao_tecnica", ""))
+    instrucao_itens = (
+        f"\n\nITENS REAIS INCLUSOS NESSE PRODUTO, EXATAMENTE nessa "
+        f"quantidade -- CONTE as pecas na imagem final antes de terminar "
+        f"e confira que bate exatamente (NAO duplique nem invente pecas "
+        f"extras -- ex: se o produto tem 02 Fronhas (= 1 PAR = 2 "
+        f"travesseiros no total, nao 4), gere exatamente 2 travesseiros "
+        f"na cama, nunca 4): "
+        + "; ".join(itens) + "."
+        if itens else ""
+    )
+
+    return (
+        f"Voce recebeu 3 fotos de referencia do produto '{produto['nome']}' "
+        f"({produto['categoria']}) de uma loja de enxovais.{contexto_produto}"
+        f"{instrucao_medidas}{instrucao_itens}\n\n"
+        "IMAGEM 1: foto real do produto JA USADA em outro slide dessa "
+        "mesma publicacao (pode ter diagrama de medidas, setas, etiquetas "
+        "tipo 'Estampa 1'/'Estampa 2' sobrepostos -- ignore essas "
+        "marcacoes). Use-a SO como referencia de como o produto se "
+        "comporta quando posto em uso (escala, caimento, formato, "
+        "construcao: onde fica a barra/babado/acabamento vs. o corpo "
+        "principal) -- NAO repita o padrao/cor do tecido dela, e NAO use "
+        "o comodo/cenario dela.\n"
+        "IMAGEM 2: foto mostrando VARIAS estampas DIFERENTES reais que "
+        "esse MESMO modelo de produto tambem tem disponivel, ainda "
+        "embaladas/dobradas (ignore completamente plastico da embalagem, "
+        "dobras, vincos e reflexos -- olhe so pro padrao/cor do tecido em "
+        "si). Escolha UMA estampa dessa imagem que seja visivelmente "
+        "DIFERENTE da estampa da IMAGEM 1 (cor e desenho diferentes) e "
+        "use APENAS essa estampa escolhida, de forma fiel e consistente, "
+        "pra gerar o produto inteiro -- nao misture com a estampa da "
+        "IMAGEM 1, nem invente uma estampa que nao esteja em nenhuma das "
+        "referencias.\n"
+        "IMAGEM 3: foto de um comodo real, limpo, SEM o produto -- essa E "
+        "a cena-base que voce deve usar para a foto final.\n\n"
+        "Gere uma nova fotografia realista mostrando ESSE PRODUTO (com a "
+        "estampa escolhida na IMAGEM 2, na escala e caimento da IMAGEM 1) "
+        "colocado/instalado dentro do comodo da IMAGEM 3 -- mantendo o "
+        "comodo, os moveis, a iluminacao e o angulo de camera da IMAGEM 3 "
+        "EXATAMENTE como estao, so adicionando o produto de forma "
+        "realista.\n"
+        "(a) o tecido estampado tem um motivo que se REPETE em tamanho e "
+        "espacamento CONSTANTES por toda a superficie -- nao reinterprete "
+        "ou redesenhe o motivo, preserve os tracos finos exatamente como "
+        "aparecem na estampa escolhida da IMAGEM 2;\n"
+        "(b) SE O PRODUTO TIVER MAIS DE UM TECIDO/ESTAMPA (ex: uma cor "
+        "lisa/renda na barra/babado/acabamento e um padrao estampado no "
+        "corpo principal, como costuma aparecer nas referencias): "
+        "respeite essa mesma estrutura de zonas (qual parte leva tecido "
+        "liso e qual leva estampado), so trocando a cor/estampa pela "
+        "escolhida na IMAGEM 2. Se houver mais de uma peca igual (ex: um "
+        "par de fronhas), TODAS as pecas do par devem usar a MESMA "
+        "combinacao de tecidos, na MESMA posicao;\n"
+        "(c) NAO mude nada da cena da IMAGEM 3 alem de inserir o produto "
+        "-- mesmos moveis, mesma parede, mesma iluminacao, mesmo angulo;\n"
+        "(d) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
+        "inteiro da cena, SEM nenhuma seta, caixa de texto, legenda, linha "
+        "ou numero de medida, e SEM nenhum close/inset separado de "
+        "amostra de tecido (nao monte colagem/grade de varias fotos);\n"
+        "(e) sem pessoas, sem logotipo, sem NENHUM texto -- incluindo "
+        "qualquer etiqueta/selo que apareca nas imagens de referencia, "
+        "isso e so pra uso interno e nao pode vazar pra imagem final.\n"
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def montar_prompt_verificacao_variante(produto: dict) -> str:
+    """
+    Juiz dedicado pra composicao com estampa variante (ver
+    montar_prompt_composicao_ambiente_variante). Diferente do juiz geral
+    (verificar_foto_hero): aqui o padrao da IMAGEM 1 (foto ja usada) deve
+    ser EVITADO, nao reproduzido -- o padrao certo e "alguma estampa
+    plausivel dentre as varias mostradas na foto de variantes", nao uma
+    unica referencia fixa.
+    """
+    itens = extrair_itens_inclusos(produto.get("descricao_tecnica", ""))
+    instrucao_itens = (
+        f"5. A quantidade de cada peca na IMAGEM 1 (foto final gerada) "
+        f"bate com a ficha tecnica real do produto ({'; '.join(itens)})? "
+        "So REPROVE aqui se voce CONSEGUE CONTAR com clareza um numero "
+        "errado de pecas. Na duvida, considere que passou.\n\n"
+        if itens else "\n"
+    )
+    n_criterios = "cinco" if itens else "quatro"
+    return (
+        f"Voce e um revisor de qualidade de fotos de produto para "
+        f"e-commerce de enxovais. O produto e '{produto['nome']}' "
+        f"(categoria: {produto['categoria']}).\n"
+        "IMAGEM 1: a foto FINAL gerada, que deveria mostrar esse produto "
+        "com uma estampa NOVA (diferente da ja usada em outro slide).\n"
+        "IMAGEM 2: foto real ja usada em outro slide dessa publicacao -- "
+        "a estampa da IMAGEM 1 deve ser DIFERENTE da estampa dessa foto.\n"
+        "IMAGEM 3: foto real mostrando varias estampas diferentes "
+        "disponiveis desse mesmo modelo, embaladas -- a estampa da "
+        "IMAGEM 1 deve corresponder (ou ser bem proxima) a UMA das "
+        "estampas visiveis nessa foto (ignore plastico/dobras/reflexos "
+        "da embalagem).\n\n"
+        "Confira:\n"
+        "1. A IMAGEM 1 mostra claramente um produto da categoria "
+        f"'{produto['categoria']}' reconhecivel como '{produto['nome']}'? "
+        "Deve ser REPROVADA se nao.\n"
+        "2. A estampa/cor da IMAGEM 1 corresponde plausivelmente a UMA "
+        "das estampas reais mostradas na IMAGEM 3 (nao precisa ser "
+        "identica, so claramente do mesmo tipo/familia visual -- cores e "
+        "formas de desenho compativeis)? Uma estampa totalmente inventada "
+        "sem nenhuma relacao com nenhuma das opcoes da IMAGEM 3 deve ser "
+        "REPROVADA.\n"
+        "3. A estampa da IMAGEM 1 e CLARAMENTE DIFERENTE da estampa da "
+        "IMAGEM 2 (nao e a mesma estampa repetida)? Se for a mesma "
+        "estampa da IMAGEM 2, deve ser REPROVADA.\n"
+        "4. A IMAGEM 1 esta livre de texto/legenda/etiqueta/selo/marca "
+        "d'agua CLARAMENTE LEGIVEL sobreposto a cena? So REPROVE se "
+        "houver letras ou numeros realmente legiveis sobrepostos a foto.\n"
+        f"{instrucao_itens}"
+        "Responda EXATAMENTE nesse formato, sem mais nada:\n"
+        f"LINHA 1: 'SIM' se a imagem representa fielmente o produto com "
+        f"uma estampa nova valida, ou 'NAO' se reprovada por qualquer um "
+        f"dos {n_criterios} motivos acima.\n"
+        "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
+        "poder corrigir). Se SIM, deixe a linha 2 vazia."
+    )
+
+
+def gerar_foto_composta_variante_com_verificacao(
+    produto: dict,
+    caminho_ambiente_base: str,
+    nome_arquivo: str | None = None,
+    max_tentativas: int = 3,
+) -> str | None:
+    """
+    Igual a gerar_foto_composta_ambiente_com_verificacao, mas usa uma
+    estampa DIFERENTE da ja usada no hero (ver
+    montar_prompt_composicao_ambiente_variante) -- pra dar variedade real
+    de estampa entre os slides, nao so de ambiente. Precisa que o produto
+    tenha fotos_variadas (foto com varias estampas desse modelo
+    embaladas); se nao tiver, retorna None e o chamador deve cair pro
+    gerador de mesma estampa (gerar_foto_composta_ambiente_com_verificacao).
+    """
+    caminho_referencia = produto.get("imagem_ambiente") or produto.get("imagem_estampa")
+    fotos_variadas = produto.get("fotos_variadas") or []
+    if not caminho_referencia or not fotos_variadas:
+        return None
+    caminho_variantes = fotos_variadas[0]
+
+    referencias_geracao = [caminho_referencia, caminho_variantes, caminho_ambiente_base]
+    referencias_verificacao = [caminho_referencia, caminho_variantes]
+    nome_arquivo = nome_arquivo or f"{produto['id']}_variante"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] compondo {produto['id']} com estampa variante...")
+        prompt = montar_prompt_composicao_ambiente_variante(produto)
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias_geracao, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = _verificar_com_prompt(
+            montar_prompt_verificacao_variante(produto), caminho_atual, referencias_verificacao
+        )
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: composicao com estampa variante de '{produto['id']}' "
+        f"nao passou na verificacao apos {max_tentativas} tentativas -- "
+        f"caindo pro fallback"
     )
     return None
 
@@ -934,6 +1159,103 @@ def gerar_foto_estampa_close_com_verificacao(
         f"  aviso: close da estampa de '{produto['id']}' nao passou na "
         f"verificacao apos {max_tentativas} tentativas -- caindo pra "
         f"repetir a foto principal no slide"
+    )
+    return None
+
+
+def montar_prompt_estampa_close_variante(produto: dict) -> str:
+    """
+    Variante de montar_prompt_estampa_close que usa uma estampa DIFERENTE
+    da ja usada no hero (mesma logica de montar_prompt_composicao_ambiente_
+    variante), pra dar variedade real de estampa no close-up tambem --
+    nao so repetir a estampa do hero em modo macro.
+    """
+    descricao = limpar_descricao_tecnica(produto.get("descricao_tecnica", ""))
+    contexto_produto = f" Ficha tecnica do produto: {descricao[:400]}." if descricao else ""
+
+    return (
+        f"Voce recebeu 2 fotos de referencia do produto '{produto['nome']}' "
+        f"({produto['categoria']}) de uma loja de enxovais.{contexto_produto}\n\n"
+        "IMAGEM 1: foto real do produto ja usada em outro slide dessa "
+        "publicacao -- NAO reproduza a estampa dela aqui, use so como "
+        "referencia do tipo/textura do tecido.\n"
+        "IMAGEM 2: foto mostrando VARIAS estampas diferentes reais que "
+        "esse MESMO modelo tambem tem disponivel, ainda embaladas/"
+        "dobradas (ignore completamente plastico da embalagem, dobras, "
+        "vincos e reflexos). Escolha UMA estampa dessa imagem que seja "
+        "visivelmente DIFERENTE da estampa da IMAGEM 1 (cor e desenho "
+        "diferentes).\n\n"
+        "Gere uma nova fotografia PROFISSIONAL, estilo e-commerce, em "
+        "CLOSE-UP/MACRO do TECIDO com a estampa escolhida na IMAGEM 2: um "
+        "enquadramento bem aproximado mostrando so uma porcao do tecido "
+        "(textura, padrao e cores reais em detalhe), preenchendo quase "
+        "todo o quadro -- NAO a peca inteira, NAO o produto montado num "
+        "ambiente.\n"
+        "(a) siga fielmente o padrao, cor e textura reais da estampa "
+        "escolhida na IMAGEM 2, sem inventar um padrao novo e sem "
+        "misturar com a estampa da IMAGEM 1;\n"
+        "(b) NAO inclua diagramas, setas, textos, numeros de medida, "
+        "etiquetas ou qualquer marcacao sobreposta das fotos de "
+        "referencia, nem plastico/vincos de embalagem -- a cena final "
+        "deve ser limpa, sem nenhum elemento grafico alem do proprio "
+        "tecido;\n"
+        "(c) iluminacao natural suave, leve profundidade de campo, sem "
+        "pessoas, sem logotipo, sem texto.\n"
+        "Proporcao quadrada, adequada para post de Instagram."
+    )
+
+
+def gerar_foto_estampa_close_variante_com_verificacao(
+    produto: dict, nome_arquivo: str | None = None, max_tentativas: int = 3
+) -> str | None:
+    """
+    Igual a gerar_foto_estampa_close_com_verificacao, mas usa uma estampa
+    DIFERENTE da ja usada no hero (ver montar_prompt_estampa_close_
+    variante e montar_prompt_composicao_ambiente_variante) -- pra dar
+    variedade real de estampa entre os slides, nao so de ambiente.
+    Precisa que o produto tenha fotos_variadas; se nao tiver, retorna
+    None e o chamador deve cair pro close-up de mesma estampa
+    (gerar_foto_estampa_close_com_verificacao).
+    """
+    caminho_referencia = produto.get("imagem_ambiente") or produto.get("imagem_estampa")
+    fotos_variadas = produto.get("fotos_variadas") or []
+    if not caminho_referencia or not fotos_variadas:
+        return None
+    caminho_variantes = fotos_variadas[-1]
+
+    referencias = [caminho_referencia, caminho_variantes]
+    nome_arquivo = nome_arquivo or f"{produto['id']}_estampa_close_variante"
+    correcao = None
+    caminho_atual = None
+
+    for tentativa in range(1, max_tentativas + 1):
+        nome = f"{nome_arquivo}_v{tentativa}"
+        print(f"  [tentativa {tentativa}/{max_tentativas}] gerando close de estampa variante de {produto['id']}...")
+        prompt = montar_prompt_estampa_close_variante(produto)
+        if correcao:
+            prompt += (
+                f"\n\nATENCAO: uma tentativa anterior falhou por isso: "
+                f"{correcao}. Corrija isso especificamente."
+            )
+        caminho_atual = _gerar_e_retornar_caminho(prompt, referencias, nome)
+        if caminho_atual is None:
+            print("  -> nenhuma imagem retornada, tentando de novo")
+            continue
+
+        passou, motivo = _verificar_com_prompt(
+            montar_prompt_verificacao_variante(produto), caminho_atual, referencias
+        )
+        if passou:
+            print(f"  [tentativa {tentativa}] aprovado na verificacao.")
+            return caminho_atual
+
+        print(f"  [tentativa {tentativa}] reprovado: {motivo}")
+        correcao = motivo or "a imagem nao corresponde ao produto real"
+
+    print(
+        f"  aviso: close de estampa variante de '{produto['id']}' nao "
+        f"passou na verificacao apos {max_tentativas} tentativas -- "
+        f"caindo pra repetir a foto principal no slide"
     )
     return None
 
