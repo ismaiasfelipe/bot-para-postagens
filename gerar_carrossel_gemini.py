@@ -907,6 +907,55 @@ def montar_prompt_estampa_close(produto: dict) -> str:
     )
 
 
+def montar_prompt_verificacao_estampa_close(produto: dict, n_referencias: int) -> str:
+    """
+    Juiz DEDICADO pra closes/macro de tecido (ver montar_prompt_estampa_
+    close) -- verificar_foto_hero exige "mostra claramente um produto
+    reconhecivel" (criterio 1), o que e incompativel com um close de
+    proposito: por definicao ele mostra SO textura/padrao preenchendo o
+    quadro, sem o formato/silhueta do produto inteiro visivel.
+
+    Criado em 07/10/2026 depois de observar, em producao, geracoes
+    legitimas (fieis a estampa, enquadramento correto de close-up) sendo
+    reprovadas repetidamente por causa desse criterio incompativel --
+    especialmente ao usar uma foto de estampa individual (fotos_estampas)
+    como unica referencia, onde o juiz geral quase sempre reprova.
+    """
+    return (
+        f"Voce e um revisor de qualidade de fotos de produto para "
+        f"e-commerce de enxovais. O produto e '{produto['nome']}' "
+        f"(categoria: {produto['categoria']}).\n"
+        "IMAGEM 1: um CLOSE-UP/MACRO gerado, que deveria mostrar SO a "
+        "textura/padrao do tecido desse produto, preenchendo o quadro -- "
+        "NAO o produto inteiro montado.\n"
+        f"IMAGENS 2 em diante: {n_referencias} foto(s) real(is) de "
+        "referencia desse tecido/produto.\n\n"
+        "Confira:\n"
+        "1. A IMAGEM 1 mostra textura/padrao de TECIDO de enxoval (nao "
+        "uma cena, objeto ou superficie sem relacao, tipo parede vazia, "
+        "movel, pessoa)? IMPORTANTE: ela NAO precisa mostrar o produto "
+        "inteiro montado nem sua silhueta/formato -- um close bem "
+        "aproximado SO do tecido, sem nada mais no quadro, esta CORRETO "
+        "e deve ser APROVADO. So REPROVE aqui se a imagem claramente nao "
+        "e tecido nenhum.\n"
+        "2. O padrao/estampa e a cor do tecido na IMAGEM 1 batem com as "
+        "referencias reais fornecidas? Um padrao/cor sem nenhuma relacao "
+        "com o real deve ser REPROVADO.\n"
+        "3. O enquadramento esta adequado pra um close-up -- nao e um "
+        "zoom tao extremo que distorce ou pixela o padrao a ponto de "
+        "ficar irreconhecivel? Deve ser REPROVADO so nesse caso extremo.\n"
+        "4. A IMAGEM 1 esta livre de texto/legenda/etiqueta/selo/marca "
+        "d'agua CLARAMENTE LEGIVEL sobreposto a cena? So REPROVE se "
+        "houver letras ou numeros realmente legiveis sobrepostos a foto.\n\n"
+        "Responda EXATAMENTE nesse formato, sem mais nada:\n"
+        "LINHA 1: 'SIM' se a imagem representa fielmente a estampa/"
+        "tecido real do produto, ou 'NAO' se reprovada por qualquer um "
+        "dos quatro motivos acima.\n"
+        "LINHA 2: se NAO, uma frase curta e especifica do motivo (pra "
+        "poder corrigir). Se SIM, deixe a linha 2 vazia."
+    )
+
+
 def gerar_foto_estampa_close_com_verificacao(
     produto: dict,
     nome_arquivo: str | None = None,
@@ -958,7 +1007,9 @@ def gerar_foto_estampa_close_com_verificacao(
             print("  -> nenhuma imagem retornada, tentando de novo")
             continue
 
-        passou, motivo = verificar_foto_hero(caminho_atual, referencias, produto)
+        passou, motivo = _verificar_com_prompt(
+            montar_prompt_verificacao_estampa_close(produto, len(referencias)), caminho_atual, referencias
+        )
         if passou:
             print(f"  [tentativa {tentativa}] aprovado na verificacao.")
             return caminho_atual
