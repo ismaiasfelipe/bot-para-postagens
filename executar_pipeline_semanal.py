@@ -82,12 +82,11 @@ FORMATOS_SIMPLES_GENERICOS = ["vitrine", "novidade_semana", "detalhe_textura"]
 
 # Biblioteca de fotos de ambiente PRONTAS (comodo real, limpo, sem nenhum
 # produto) baixadas do Drive (pasta "ambientes" em referencias e exemplos)
-# -- ver _escolher_pasta_ambiente/_escolher_foto_ambiente_principal/
-# _escolher_foto_ambiente_variacao. Usada pra compor a foto do produto
-# DENTRO de um desses comodos (gerar_carrossel_gemini.
-# gerar_foto_composta_ambiente_com_verificacao), em vez de so recriar a
-# cena da unica foto de referencia que cada produto tem -- da variedade
-# de ambiente de verdade entre produtos/slides diferentes.
+# -- ver _escolher_pasta_ambiente/_fotos_ambiente_candidatas. Usada pra
+# compor a foto do produto DENTRO de um desses comodos (gerar_carrossel_
+# gemini.gerar_foto_composta_ambiente_com_verificacao), em vez de so
+# recriar a cena da unica foto de referencia que cada produto tem -- da
+# variedade de ambiente de verdade entre produtos/slides diferentes.
 PASTA_AMBIENTES_REF = Path("ambientes_referencia")
 
 # categoria do catalogo (ver produtos_reais.json) -> nome da subpasta em
@@ -398,95 +397,70 @@ def _indice_estavel(texto: str, modulo: int) -> int:
     return int(hashlib.sha1(texto.encode("utf-8")).hexdigest(), 16) % modulo
 
 
-def _escolher_foto_ambiente_principal(produto: dict) -> str | None:
+def _fotos_ambiente_candidatas(produto: dict) -> list[str]:
+    """
+    Todas as fotos de ambiente disponiveis pra categoria do produto,
+    ORDENADAS a partir de um indice estavel por produto (mesmo produto
+    sempre comeca pela mesma, produtos diferentes tendem a comecar em
+    pontos diferentes da pasta), em vez de so UMA foto fixa. Usada tanto
+    pra tentar VARIAS salas antes de desistir (ver obter_foto_hero --
+    corrigido em 07/10/2026 depois do usuario reportar que o slide 1
+    ainda caia na cena antiga/crua quando a 1a sala tentada falhava)
+    quanto pra escolher salas diferentes pros varios slides do vitrine.
+    """
     nome_pasta = _escolher_pasta_ambiente(produto)
     candidatos = _fotos_ambiente_disponiveis(nome_pasta) if nome_pasta else []
     if not candidatos:
-        return None
-    return candidatos[_indice_estavel(produto["id"], len(candidatos))]
+        return []
+    indice_inicial = _indice_estavel(produto["id"], len(candidatos))
+    return [candidatos[(indice_inicial + i) % len(candidatos)] for i in range(len(candidatos))]
 
 
-def _escolher_foto_ambiente_variacao(produto: dict) -> str | None:
-    """Escolhe uma foto de ambiente DIFERENTE da usada em _escolher_foto_ambiente_principal (mesma pasta)."""
-    nome_pasta = _escolher_pasta_ambiente(produto)
-    candidatos = _fotos_ambiente_disponiveis(nome_pasta) if nome_pasta else []
-    if len(candidatos) < 2:
-        return None
-    indice_principal = _indice_estavel(produto["id"], len(candidatos))
-    indice_variacao = (indice_principal + 1) % len(candidatos)
-    return candidatos[indice_variacao]
-
-
-def _obter_foto_composta(produto: dict, caminho_ambiente: str, sufixo_cache: str) -> str | None:
+def _foto_estampa_indice(produto: dict, indice: int) -> str | None:
     """
-    Reaproveita uma composicao ja verificada em cache_hero/ se existir
-    pra essa mesma combinacao de produto+referencias+foto de ambiente
-    (ver _chave_cache_hero); senao gera via Gemini
-    (gerar_foto_composta_ambiente_com_verificacao) e salva no cache so se
-    aprovada. sufixo_cache distingue a foto principal da variacao no
-    nome do arquivo de cache (duas fotos de ambiente diferentes pro
-    mesmo produto).
-    """
-    pasta_cache = Path("cache_hero")
-    pasta_cache.mkdir(exist_ok=True)
-    assinatura_ambiente = hashlib.sha1(caminho_ambiente.encode("utf-8")).hexdigest()[:8]
-    caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_{sufixo_cache}_{assinatura_ambiente}.png"
-    if caminho_cache.exists():
-        return str(caminho_cache)
+    produto['fotos_estampas'][indice] -- fotos de catalogo limpas (fundo
+    branco, sem embalagem), uma por estampa real diferente que esse
+    modelo tem disponivel (pasta "estampas" do Drive).
 
-    aprovado = gerar_foto_composta_ambiente_com_verificacao(
-        produto, caminho_ambiente, nome_arquivo=f"{produto['id']}_{sufixo_cache}"
-    )
-    if aprovado is None:
-        return None
+    Indice FIXO por slide (0=hero, 1=variacao de ambiente, 2+=grid),
+    nao mais um hash -- corrigido em 07/10/2026 depois do usuario
+    reportar que o slide 2 saiu com a MESMA estampa do slide 1: dois
+    hashes diferentes podiam cair no mesmo indice por coincidencia, e
+    nao havia garantia nenhuma de que dois slides nao repetissem. Com
+    indice fixo por posicao, cada slide usa uma estampa DIFERENTE da
+    lista por construcao (contanto que a lista seja grande o bastante).
 
-    caminho_cache.write_bytes(Path(aprovado).read_bytes())
-    return str(caminho_cache)
-
-
-def _escolher_foto_estampa_variante(produto: dict, salt: str) -> str | None:
-    """
-    Escolhe (de forma deterministica/estavel, nao aleatoria) UMA foto
-    individual de produto['fotos_estampas'] -- fotos de catalogo limpas
-    (fundo branco, sem embalagem), uma por estampa real diferente que
-    esse modelo tem disponivel (pasta "estampas" do Drive). salt muda o
-    indice escolhido entre chamadas diferentes pro mesmo produto (ex:
-    foto de ambiente vs. close-up), pra tender a variar qual estampa
-    cada slide usa.
-
-    Criado em 07/10/2026: o usuario corrigiu que a fonte certa de
-    variedade de estampa e essa pasta, NAO "fotos_variadas" (que so
-    mostra varias pecas juntas numa mesma foto de referencia de
-    composicao, sem indicar qual e qual estampa).
-
-    Retorna None se o produto nao tiver fotos_estampas.
+    Retorna None se o produto nao tiver fotos_estampas suficientes pra
+    esse indice -- o chamador deve tratar como "sem variedade aqui".
     """
     fotos = produto.get("fotos_estampas") or []
-    if not fotos:
+    if indice >= len(fotos):
         return None
-    return fotos[_indice_estavel(produto["id"] + salt, len(fotos))]
+    return fotos[indice]
 
 
-def _obter_foto_composta_variante(
-    produto: dict, caminho_ambiente: str, sufixo_cache: str, caminho_estampa_variante: str
+def _obter_foto_composta(
+    produto: dict, caminho_ambiente: str, sufixo_cache: str, caminho_estampa_override: str | None = None
 ) -> str | None:
     """
-    Igual a _obter_foto_composta, mas usa uma foto de estampa real
-    INDIVIDUAL (produto['fotos_estampas'], ver _escolher_foto_estampa_
-    variante) como referencia de fidelidade, em vez de imagem_estampa/
-    imagem_ambiente -- pra dar variedade de estampa de verdade entre os
-    slides, nao so de ambiente.
+    Reaproveita uma composicao ja verificada em cache_hero/ se existir
+    pra essa mesma combinacao de produto+ambiente+estampa; senao gera
+    via Gemini (gerar_foto_composta_ambiente_com_verificacao) e salva no
+    cache so se aprovada.
 
-    Retorna None se reprovar -- o chamador deve cair pro
-    _obter_foto_composta de mesma estampa.
+    caminho_estampa_override: quando passado, usa essa foto individual
+    de produto['fotos_estampas'] (ver _foto_estampa_indice) como
+    referencia de padrao/cor, em vez de imagem_estampa/imagem_ambiente
+    -- pra dar variedade de estampa de verdade entre os slides, nao so
+    de ambiente.
     """
     pasta_cache = Path("cache_hero")
     pasta_cache.mkdir(exist_ok=True)
     assinatura_ambiente = hashlib.sha1(caminho_ambiente.encode("utf-8")).hexdigest()[:8]
-    assinatura_estampa = hashlib.sha1(caminho_estampa_variante.encode("utf-8")).hexdigest()[:8]
-    caminho_cache = (
-        pasta_cache / f"{_chave_cache_hero(produto)}_{sufixo_cache}_{assinatura_ambiente}_{assinatura_estampa}.png"
-    )
+    partes_nome = [_chave_cache_hero(produto), sufixo_cache, assinatura_ambiente]
+    if caminho_estampa_override:
+        partes_nome.append(hashlib.sha1(caminho_estampa_override.encode("utf-8")).hexdigest()[:8])
+    caminho_cache = pasta_cache / (f"{'_'.join(partes_nome)}.png")
     if caminho_cache.exists():
         return str(caminho_cache)
 
@@ -494,7 +468,7 @@ def _obter_foto_composta_variante(
         produto,
         caminho_ambiente,
         nome_arquivo=f"{produto['id']}_{sufixo_cache}",
-        referencias_fidelidade_override=[caminho_estampa_variante],
+        referencias_fidelidade_override=[caminho_estampa_override] if caminho_estampa_override else None,
     )
     if aprovado is None:
         return None
@@ -506,24 +480,32 @@ def _obter_foto_composta_variante(
 def obter_foto_hero(produto: dict) -> str | None:
     """
     Foto principal do produto. Forma PRINCIPAL (desde 06/10/2026): compoe
-    o produto (fiel a estampa/ambiente reais) dentro de uma foto de
-    ambiente PRONTA e limpa da biblioteca local (ver
-    _escolher_foto_ambiente_principal/ambientes_referencia/), escolhida
-    pela categoria do produto -- da variedade real de cenario entre
-    produtos diferentes, em vez de sempre recriar a cena da unica foto
-    de referencia que cada produto tem.
+    o produto dentro de uma foto de ambiente PRONTA e limpa da biblioteca
+    local (ver _fotos_ambiente_candidatas/ambientes_referencia/),
+    escolhida pela categoria do produto. Usa fotos_estampas[0] (ver
+    _foto_estampa_indice) como estampa de referencia quando disponivel,
+    pra deixar explicito e controlavel qual estampa cada slide do
+    vitrine usa (em vez de depender de qual estampa imagem_ambiente
+    mostra, que podia coincidir com a escolhida pra outro slide).
+
+    Tenta TODAS as salas disponiveis da categoria (nao so a 1a) antes de
+    desistir -- corrigido em 07/10/2026: o usuario reportou que o slide
+    1 ainda saia com a cena de referencia antiga/crua ("o quarto que não
+    é para ser usado") sempre que a 1a sala falhava na verificacao;
+    agora so cai nesse fallback depois de esgotar TODAS as salas da
+    categoria.
 
     Fallback (gerar_foto_hero_com_verificacao, edita a cena da propria
-    foto de referencia): usado quando a categoria nao bate com nenhuma
-    pasta de ambiente conhecida, ou quando a composicao nao foi aprovada
-    na verificacao de fidelidade.
+    foto de referencia): usado so quando a categoria nao bate com
+    nenhuma pasta de ambiente conhecida, ou quando NENHUMA sala da
+    biblioteca funcionou.
 
     Retorna None se reprovar em todas as tentativas (dos dois metodos) --
     o chamador deve pular esse produto, nunca publicar uma foto reprovada.
     """
-    foto_ambiente = _escolher_foto_ambiente_principal(produto)
-    if foto_ambiente:
-        composta = _obter_foto_composta(produto, foto_ambiente, "hero")
+    estampa = _foto_estampa_indice(produto, 0)
+    for foto_ambiente in _fotos_ambiente_candidatas(produto):
+        composta = _obter_foto_composta(produto, foto_ambiente, "hero", estampa)
         if composta:
             return composta
 
@@ -543,17 +525,11 @@ def obter_foto_hero(produto: dict) -> str | None:
 
 def obter_foto_estampa_close(produto: dict) -> str | None:
     """
-    Reaproveita um close-up verificado do tecido em cache_hero/ se
-    existir pra essa mesma combinacao de produto+referencias (mesma
-    chave de obter_foto_hero, so com sufixo); senao gera via Gemini. So
-    usado pelo formato "vitrine" hoje, pro slide de fechamento (ver
-    montar_dados_formato).
-
-    Tenta primeiro uma estampa INDIVIDUAL DIFERENTE da ja usada no hero
-    (produto['fotos_estampas'], ver _escolher_foto_estampa_variante), pra
-    dar variedade real de estampa no carrossel em vez de repetir sempre
-    a mesma; se o produto nao tiver fotos_estampas ou a geracao reprovar,
-    cai pro close-up de mesma estampa (imagem_estampa/imagem_ambiente).
+    Close-up/macro do tecido do produto, pro slide de fechamento do
+    formato "vitrine" (ver montar_dados_formato) -- combinado com a foto
+    hero, mostrando a MESMA estampa (fotos_estampas[0], igual ao hero)
+    de perto. Reaproveita cache_hero/ se ja existir; senao gera via
+    Gemini (gerar_foto_estampa_close_com_verificacao).
 
     Retorna None se o produto nao tiver nenhuma referencia real ou tudo
     reprovar -- o chamador (_construir_vitrine) cai pra repetir a foto
@@ -562,18 +538,16 @@ def obter_foto_estampa_close(produto: dict) -> str | None:
     pasta_cache = Path("cache_hero")
     pasta_cache.mkdir(exist_ok=True)
 
-    caminho_estampa_variante = _escolher_foto_estampa_variante(produto, ":estampa_close")
-    if caminho_estampa_variante:
-        assinatura = hashlib.sha1(caminho_estampa_variante.encode("utf-8")).hexdigest()[:8]
-        caminho_cache_variante = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close_variante_{assinatura}.png"
-        if caminho_cache_variante.exists():
-            return str(caminho_cache_variante)
-        aprovado = gerar_foto_estampa_close_com_verificacao(
-            produto, referencias_override=[caminho_estampa_variante]
-        )
+    estampa = _foto_estampa_indice(produto, 0)
+    if estampa:
+        assinatura = hashlib.sha1(estampa.encode("utf-8")).hexdigest()[:8]
+        caminho_cache_estampa = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close_{assinatura}.png"
+        if caminho_cache_estampa.exists():
+            return str(caminho_cache_estampa)
+        aprovado = gerar_foto_estampa_close_com_verificacao(produto, referencias_override=[estampa])
         if aprovado is not None:
-            caminho_cache_variante.write_bytes(Path(aprovado).read_bytes())
-            return str(caminho_cache_variante)
+            caminho_cache_estampa.write_bytes(Path(aprovado).read_bytes())
+            return str(caminho_cache_estampa)
 
     caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_close.png"
     if caminho_cache.exists():
@@ -589,77 +563,77 @@ def obter_foto_estampa_close(produto: dict) -> str | None:
 
 def obter_foto_ambiente_variacao(produto: dict) -> str | None:
     """
-    2a foto de ambiente do produto, pra variar os slides do formato
-    "vitrine" (ver montar_dados_formato) em vez de repetir a foto
-    principal em todos. Compoe o produto numa foto de ambiente DIFERENTE
-    da usada em obter_foto_hero (mesma pasta/categoria, outra foto da
-    biblioteca -- ver _escolher_foto_ambiente_variacao).
+    2a foto do produto MONTADO (cama/jogo inteiro, nao close de tecido),
+    pra variar os slides do formato "vitrine" em vez de repetir a foto
+    principal em todos. Usa uma sala DIFERENTE da tentada primeiro pro
+    hero (ver _fotos_ambiente_candidatas) E, quando disponivel, uma
+    estampa DIFERENTE (fotos_estampas[1], ver _foto_estampa_indice) --
+    corrigido em 07/10/2026: antes usava um indice escolhido por hash
+    que podia coincidir com o do hero (usuario reportou slide 1 e 2 com
+    a mesma estampa); agora e sempre indice 1, garantido diferente do
+    indice 0 usado no hero.
 
-    Tenta primeiro uma estampa INDIVIDUAL DIFERENTE da ja usada no hero
-    (produto['fotos_estampas'], ver _escolher_foto_estampa_variante), pra
-    dar variedade real de estampa alem da variedade de ambiente; se o
-    produto nao tiver fotos_estampas ou a geracao reprovar, cai pra
-    repetir a mesma estampa do hero num ambiente diferente
-    (_obter_foto_composta).
-
-    Retorna None se a pasta de ambiente da categoria tiver menos de 2
-    fotos (sem uma 2a opcao de verdade), ou se tudo reprovar na
-    verificacao -- o chamador (_construir_vitrine) cai pra reaproveitar
-    a foto principal nesse caso.
+    Retorna None se a categoria nao tiver pelo menos 2 salas (sem uma 2a
+    opcao de verdade), ou se tudo reprovar na verificacao -- o chamador
+    (_construir_vitrine) cai pra reaproveitar a foto principal.
     """
-    foto_ambiente = _escolher_foto_ambiente_variacao(produto)
-    if not foto_ambiente:
+    salas = _fotos_ambiente_candidatas(produto)
+    if len(salas) < 2:
         return None
+    estampa = _foto_estampa_indice(produto, 1) or _foto_estampa_indice(produto, 0)
 
-    caminho_estampa_variante = _escolher_foto_estampa_variante(produto, ":ambiente_var")
-    if caminho_estampa_variante:
-        composta_variante = _obter_foto_composta_variante(
-            produto, foto_ambiente, "ambiente_var_estampa", caminho_estampa_variante
-        )
-        if composta_variante:
-            return composta_variante
-
-    return _obter_foto_composta(produto, foto_ambiente, "ambiente_var")
+    # comeca pela 2a sala da lista (a 1a e a que obter_foto_hero tenta
+    # primeiro) e gira a partir dai, nunca pela 1a -- minimiza (sem
+    # garantir 100%, se a 2a sala tambem falhar) repetir a MESMA sala do
+    # hero.
+    for foto_ambiente in salas[1:] + salas[:1]:
+        composta = _obter_foto_composta(produto, foto_ambiente, "ambiente_var", estampa)
+        if composta:
+            return composta
+    return None
 
 
 def obter_fotos_estampas_grid(produto: dict, quantidade: int = 3) -> list[str] | None:
     """
-    Gera closes limpos de ate `quantidade` estampas reais DIFERENTES
-    desse produto (produto['fotos_estampas']), pro grid de variedade do
-    slide 3 do formato "vitrine" (ver montar_dados_formato/
-    _construir_vitrine). Corrigido em 07/10/2026 a pedido do usuario: "no
-    terceiro slide, as imagens dentro do circulo devem ser de estampas
-    diferentes, não de imagem em foco" -- antes o grid reaproveitava
-    foto_principal/foto_ambiente_variacao/foto_estampa_close (cenas do
-    produto em ambiente), nao padroes de estampa de verdade.
+    Ate `quantidade` fotos do produto MONTADO (cama/jogo inteiro em
+    ambiente, NAO close de tecido) pro grid de variedade do slide 3 do
+    formato "vitrine", cada uma com uma estampa real DIFERENTE
+    (fotos_estampas[2], [3], [4]... continuando depois dos indices 0/1
+    ja usados pro hero/variacao -- ver _foto_estampa_indice) e, quando
+    possivel, uma sala tambem diferente.
 
-    Cada close usa gerar_foto_estampa_close_com_verificacao com
-    referencias_override (mesma logica de obter_foto_estampa_close), uma
-    chamada por estampa, cacheada separadamente.
+    Corrigido em 07/10/2026 a pedido do usuario -- duas correcoes na
+    mesma tacada:
+    (1) "não era pra colocar close nas estampas, era pra aparecer camas
+    inteiras com estampas diferentes": a 1a tentativa gerava closes de
+    tecido (gerar_foto_estampa_close_com_verificacao); agora reaproveita
+    o MESMO gerador de composicao em ambiente do hero/variacao
+    (_obter_foto_composta), so que com uma sala+estampa por item do
+    grid.
+    (2) "no slide 3 tem duas estampas iguais": a versao anterior pegava
+    fotos_estampas[:quantidade] sempre a partir do indice 0 -- podia
+    repetir a mesma estampa ja usada no hero (indice 0) ou colidir com
+    indices escolhidos por hash noutros slides. Agora usa indices FIXOS
+    e exclusivos (2, 3, 4...), nunca sobrepondo hero (0) ou variacao (1).
 
-    Retorna None se o produto nao tiver fotos_estampas, ou lista com
-    menos de 2 fotos aprovadas -- o chamador (_construir_vitrine) cai pro
-    grid antigo (fotos de ambiente/hero) nesse caso.
+    Retorna None se o produto nao tiver pelo menos 2 estampas sobrando
+    (alem das ja usadas em hero/variacao), ou se tudo reprovar -- o
+    chamador (_construir_vitrine) cai pro grid antigo (fotos de
+    ambiente/hero repetidas).
     """
-    fotos = produto.get("fotos_estampas") or []
-    if not fotos:
+    salas = _fotos_ambiente_candidatas(produto)
+    if not salas:
         return None
 
-    pasta_cache = Path("cache_hero")
-    pasta_cache.mkdir(exist_ok=True)
     resultado = []
-    for caminho_estampa in fotos[:quantidade]:
-        assinatura = hashlib.sha1(caminho_estampa.encode("utf-8")).hexdigest()[:8]
-        caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_grid_{assinatura}.png"
-        if caminho_cache.exists():
-            resultado.append(str(caminho_cache))
-            continue
-        aprovado = gerar_foto_estampa_close_com_verificacao(
-            produto, referencias_override=[caminho_estampa]
-        )
-        if aprovado is not None:
-            caminho_cache.write_bytes(Path(aprovado).read_bytes())
-            resultado.append(str(caminho_cache))
+    for i in range(quantidade):
+        estampa = _foto_estampa_indice(produto, i + 2)
+        if not estampa:
+            break
+        foto_ambiente = salas[(i + 2) % len(salas)]
+        composta = _obter_foto_composta(produto, foto_ambiente, f"grid{i}", estampa)
+        if composta:
+            resultado.append(composta)
 
     return resultado if len(resultado) >= 2 else None
 

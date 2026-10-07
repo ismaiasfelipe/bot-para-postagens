@@ -639,7 +639,7 @@ def montar_prompt_composicao_ambiente(produto: dict) -> str:
     """
     Prompt pra compor o produto DENTRO de uma foto de ambiente pronta (da
     biblioteca local ambientes_referencia/, escolhida por categoria -- ver
-    executar_pipeline_semanal._escolher_foto_ambiente_principal), em vez de
+    executar_pipeline_semanal._fotos_ambiente_candidatas), em vez de
     recriar a cena da foto de referencia original. Criado em 06/10/2026 a
     pedido do usuario: usar o processo completo (estampa real + referencia
     de escala/caimento real + ambiente pre-pronto) em vez de só editar a
