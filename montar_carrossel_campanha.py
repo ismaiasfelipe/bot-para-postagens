@@ -105,6 +105,25 @@ def _texto_centralizado(draw, centro_x, y, texto, fonte, cor):
     return largura
 
 
+def _fonte_ajustada_a_largura(
+    texto: str, caminho_fonte: Path, tamanho_inicial: int, peso: str, largura_max: int, draw: ImageDraw.ImageDraw
+) -> ImageFont.FreeTypeFont:
+    """
+    Mesma fonte, mas reduz o tamanho (ate um piso de 60% do inicial) se o
+    texto nao couber em largura_max -- evita o texto vazar pra fora da
+    caixa/area reservada quando a string e mais longa que o normal (ex:
+    "NOSSAS ESTAMPAS" invadindo os circulos do grid de variedade, ver
+    montar_slide_variedade). So encolhe, nunca aumenta.
+    """
+    tamanho = tamanho_inicial
+    tamanho_minimo = max(14, int(tamanho_inicial * 0.6))
+    fonte = _carregar_fonte(caminho_fonte, tamanho, peso)
+    while draw.textlength(texto, font=fonte) > largura_max and tamanho > tamanho_minimo:
+        tamanho -= 2
+        fonte = _carregar_fonte(caminho_fonte, tamanho, peso)
+    return fonte
+
+
 def _forma_um_canto_arredondado(largura, altura, raio, canto):
     """
     Mascara retangular flush nas bordas do canvas, com apenas UM canto
@@ -139,25 +158,46 @@ def montar_slide_itens_inclusos(
     tela.paste(foto, (0, 0))
     draw = ImageDraw.Draw(tela)
 
-    largura_caixa, altura_caixa = 620, 340
+    largura_caixa = 620
+    x_texto = 50
+    fonte_item = _carregar_fonte(FONTE_TITULO, 28, "Bold")
+    # Largura disponivel pro texto do item, descontando o marcador (bolinha
+    # + respiro) e uma margem direita dentro da caixa -- sem isso, item
+    # longo (ex: "01 Colcha casal 2,55m x 2,65m, (Babado 50cm)") desenhava
+    # numa linha so e vazava pra fora da caixa, por cima da foto (bug
+    # reportado pelo usuario em 07/10/2026).
+    largura_max_item = largura_caixa - (x_texto - 0) - 24 - 40
+    altura_linha = 36
+    espaco_entre_itens = 14
+
+    linhas_por_item = [_quebrar_linhas(item, fonte_item, largura_max_item, draw) or [item] for item in itens]
+    total_linhas = sum(len(linhas) for linhas in linhas_por_item)
+
+    # Altura da caixa cresce com a quantidade de linhas de verdade (em vez
+    # de uma altura fixa que nao acompanhava o texto), com piso igual ao
+    # valor original e teto pra nao dominar o slide inteiro.
+    altura_conteudo = 55 + 46 + 26 + total_linhas * altura_linha + (len(itens) - 1) * espaco_entre_itens
+    altura_caixa = max(340, min(altura_conteudo + 40, 620))
+
     caixa = Image.new("RGBA", (largura_caixa, altura_caixa), _hex_para_rgb(OFF_WHITE) + (255,))
     mascara = _forma_um_canto_arredondado(largura_caixa, altura_caixa, raio=160, canto="tr")
     caixa.putalpha(mascara)
     tela.paste(caixa, (0, ALTURA - altura_caixa), caixa)
 
     draw = ImageDraw.Draw(tela)
-    x_texto, y_texto = 50, ALTURA - altura_caixa + 55
+    y_texto = ALTURA - altura_caixa + 55
 
     fonte_caixa_titulo = _carregar_fonte(FONTE_TITULO, 34, "Bold")
     draw.text((x_texto, y_texto), titulo_caixa, font=fonte_caixa_titulo, fill=_hex_para_rgb(ROSA_QUARTZO))
     draw.line((x_texto, y_texto + 46, x_texto + 200, y_texto + 46), fill=_hex_para_rgb(ROSA_QUARTZO), width=2)
 
-    fonte_item = _carregar_fonte(FONTE_TITULO, 28, "Bold")
     y = y_texto + 72
-    for item in itens:
+    for linhas in linhas_por_item:
         draw.ellipse((x_texto, y + 10, x_texto + 8, y + 18), fill=_hex_para_rgb(ROXO_NOBRE))
-        draw.text((x_texto + 24, y), item, font=fonte_item, fill=_hex_para_rgb(ROXO_NOBRE))
-        y += 46
+        for linha in linhas:
+            draw.text((x_texto + 24, y), linha, font=fonte_item, fill=_hex_para_rgb(ROXO_NOBRE))
+            y += altura_linha
+        y += espaco_entre_itens
 
     tela.save(caminho_saida)
     print(f"slide 2 (itens inclusos) salvo em {caminho_saida}")
@@ -249,18 +289,29 @@ def montar_slide_variedade(
         tela.paste(foto, (cx - raio, cy - raio), mascara_circulo)
         draw.ellipse((cx - raio, cy - raio, cx + raio, cy + raio), outline=_hex_para_rgb(ROXO_NOBRE), width=4)
 
-    fonte_central = _carregar_fonte(FONTE_TITULO, 34, "Bold")
-    fonte_central_destaque = _carregar_fonte(FONTE_TITULO, 40, "Bold")
     centro_x = LARGURA // 2
     linha1, linha2, linha3 = texto_central
     linha2 = linha2.format(n=len(fotos_estampas))
 
+    # Largura segura pro texto central nao invadir os circulos laterais --
+    # com 3+ fotos ha circulos dos dois lados na MESMA faixa vertical do
+    # texto (ex: layout de 5, circulos em x=215/865, raio 165 => gap real
+    # de so 320px entre eles), e o texto desenhado sem checar isso vazava
+    # por cima do circulo (bug reportado pelo usuario em 07/10/2026, ex:
+    # "NOSSAS ESTAMPAS"). Com so 2 fotos (top+esquerda) nao ha circulo do
+    # lado direito nessa faixa, entao sobra bem mais espaco.
+    largura_segura = 320 if len(fotos_estampas) >= 3 else LARGURA - 120
+
+    fonte_linha1 = _fonte_ajustada_a_largura(linha1, FONTE_TITULO, 34, "Bold", largura_segura, draw)
+    fonte_linha2 = _fonte_ajustada_a_largura(linha2, FONTE_TITULO, 40, "Bold", largura_segura, draw)
+    fonte_linha3 = _fonte_ajustada_a_largura(linha3, FONTE_TITULO, 34, "Bold", largura_segura, draw)
+
     y = ALTURA // 2 - 60
-    _texto_centralizado(draw, centro_x, y, linha1, fonte_central, _hex_para_rgb(ROXO_NOBRE))
+    _texto_centralizado(draw, centro_x, y, linha1, fonte_linha1, _hex_para_rgb(ROXO_NOBRE))
     y += 44
-    _texto_centralizado(draw, centro_x, y, linha2, fonte_central_destaque, _hex_para_rgb(ROSA_QUARTZO))
+    _texto_centralizado(draw, centro_x, y, linha2, fonte_linha2, _hex_para_rgb(ROSA_QUARTZO))
     y += 50
-    _texto_centralizado(draw, centro_x, y, linha3, fonte_central, _hex_para_rgb(ROXO_NOBRE))
+    _texto_centralizado(draw, centro_x, y, linha3, fonte_linha3, _hex_para_rgb(ROXO_NOBRE))
 
     tela.save(caminho_saida)
     print(f"slide 4 (variedade) salvo em {caminho_saida}")
@@ -464,8 +515,11 @@ def montar_slide_hero(
     draw.rectangle((0, 0, largura_banner, altura_banner), fill=_hex_para_rgb(OFF_WHITE))
     draw.rectangle((0, altura_banner - 4, largura_banner, altura_banner), fill=_hex_para_rgb(ROSA_QUARTZO))
 
-    fonte_badge1 = _carregar_fonte(FONTE_TITULO, 30, "Bold")
-    fonte_badge2 = _carregar_fonte(FONTE_TITULO, 38, "Bold")
+    # largura_banner - padding dos 2 lados -- evita nome de campanha
+    # longo (ex: "ANIVERSÁRIO IL VARIEDADES") vazar pra fora do banner.
+    largura_max_badge = largura_banner - 28 - 16
+    fonte_badge1 = _fonte_ajustada_a_largura(badge_linha1, FONTE_TITULO, 30, "Bold", largura_max_badge, draw)
+    fonte_badge2 = _fonte_ajustada_a_largura(badge_linha2, FONTE_TITULO, 38, "Bold", largura_max_badge, draw)
     draw.text((28, 24), badge_linha1, font=fonte_badge1, fill=_hex_para_rgb(ROXO_NOBRE))
     draw.text((28, 62), badge_linha2, font=fonte_badge2, fill=_hex_para_rgb(ROSA_QUARTZO))
 
