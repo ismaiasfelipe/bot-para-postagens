@@ -139,6 +139,13 @@ def _construir_vitrine(
     # e distintas que tiver disponivel (nunca inventa uma 2a/3a foto so
     # pra encher a grade).
     foto_itens = foto_ambiente_variacao or foto_principal
+    # grade_estampas_reais: True quando o chamador ja passou fotos_estampas
+    # explicitamente (ver executar_pipeline_semanal.obter_fotos_estampas_grid
+    # -- closes de ate 3 ESTAMPAS REAIS DIFERENTES desse produto, nao a
+    # mesma cena/produto em foco repetida). Corrigido em 07/10/2026: o
+    # usuario apontou que o grid tem que mostrar estampas de verdade, nao
+    # as mesmas fotos de ambiente/hero.
+    grade_estampas_reais = fotos_estampas is not None
     if fotos_estampas is None:
         fotos_estampas = list(dict.fromkeys(
             f for f in (foto_principal, foto_ambiente_variacao, foto_estampa_close) if f
@@ -160,13 +167,15 @@ def _construir_vitrine(
 
     montar_slide_hero(foto_principal, produto["nome"], s[0], badge_linha1=badge_linha1, badge_linha2=badge_linha2)
     montar_slide_itens_inclusos(foto_itens, itens_inclusos, s[1])
-    # Texto generico "CONHEÇA CADA DETALHE" em vez do default "N ESTAMPAS
-    # DISPONIVEIS" (montar_slide_variedade) -- fotos_estampas agora mistura
-    # hero + variacao de ambiente + close de tecido (nao sao N padroes de
-    # estampa diferentes), entao "estampas" seria enganoso.
-    montar_slide_variedade(
-        fotos_estampas, s[2], texto_central=("CONHEÇA", "CADA DETALHE", "DESSE PRODUTO")
-    )
+    # Com estampas reais de verdade (grade_estampas_reais), o texto pode
+    # falar de estampa sem mentir. Sem isso (fallback misturando hero +
+    # ambiente + close), mantem o texto generico pra nao prometer algo
+    # que o grid nao mostra.
+    if grade_estampas_reais:
+        texto_central = ("CONHEÇA", "NOSSAS ESTAMPAS", "DISPONÍVEIS")
+    else:
+        texto_central = ("CONHEÇA", "CADA DETALHE", "DESSE PRODUTO")
+    montar_slide_variedade(fotos_estampas, s[2], texto_central=texto_central)
     montar_slide_duas_fotos_sobrepostas(foto_principal, foto_secundaria, titulo_fechamento, legenda_fechamento, s[3])
     return s
 

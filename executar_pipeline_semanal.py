@@ -622,6 +622,48 @@ def obter_foto_ambiente_variacao(produto: dict) -> str | None:
     return _obter_foto_composta(produto, foto_ambiente, "ambiente_var")
 
 
+def obter_fotos_estampas_grid(produto: dict, quantidade: int = 3) -> list[str] | None:
+    """
+    Gera closes limpos de ate `quantidade` estampas reais DIFERENTES
+    desse produto (produto['fotos_estampas']), pro grid de variedade do
+    slide 3 do formato "vitrine" (ver montar_dados_formato/
+    _construir_vitrine). Corrigido em 07/10/2026 a pedido do usuario: "no
+    terceiro slide, as imagens dentro do circulo devem ser de estampas
+    diferentes, não de imagem em foco" -- antes o grid reaproveitava
+    foto_principal/foto_ambiente_variacao/foto_estampa_close (cenas do
+    produto em ambiente), nao padroes de estampa de verdade.
+
+    Cada close usa gerar_foto_estampa_close_com_verificacao com
+    referencias_override (mesma logica de obter_foto_estampa_close), uma
+    chamada por estampa, cacheada separadamente.
+
+    Retorna None se o produto nao tiver fotos_estampas, ou lista com
+    menos de 2 fotos aprovadas -- o chamador (_construir_vitrine) cai pro
+    grid antigo (fotos de ambiente/hero) nesse caso.
+    """
+    fotos = produto.get("fotos_estampas") or []
+    if not fotos:
+        return None
+
+    pasta_cache = Path("cache_hero")
+    pasta_cache.mkdir(exist_ok=True)
+    resultado = []
+    for caminho_estampa in fotos[:quantidade]:
+        assinatura = hashlib.sha1(caminho_estampa.encode("utf-8")).hexdigest()[:8]
+        caminho_cache = pasta_cache / f"{_chave_cache_hero(produto)}_estampa_grid_{assinatura}.png"
+        if caminho_cache.exists():
+            resultado.append(str(caminho_cache))
+            continue
+        aprovado = gerar_foto_estampa_close_com_verificacao(
+            produto, referencias_override=[caminho_estampa]
+        )
+        if aprovado is not None:
+            caminho_cache.write_bytes(Path(aprovado).read_bytes())
+            resultado.append(str(caminho_cache))
+
+    return resultado if len(resultado) >= 2 else None
+
+
 def escolher_blocos_stories(historico: list[dict]) -> list:
     """Gira pelos 6 blocos de story de 1-foto-so, 2 diferentes por post (ver BLOCOS_STORY)."""
     n = len(historico)
@@ -740,13 +782,15 @@ def montar_dados_formato(
         }
     if formato == "vitrine":
         # Gera (com cache) uma 2a foto de ambiente (outro angulo/
-        # composicao) e um close-up do tecido, pra variar os 4 slides em
-        # vez de repetir a mesma foto hero -- None em qualquer uma faz
-        # _construir_vitrine cair pro fallback (reaproveita a principal).
+        # composicao), um close-up do tecido, e ate 3 closes de estampas
+        # REAIS diferentes pro grid (fotos_estampas_grid) -- None em
+        # qualquer uma faz _construir_vitrine cair pro fallback
+        # (reaproveita a principal).
         return {
             "foto_principal": foto_hero,
             "foto_ambiente_variacao": obter_foto_ambiente_variacao(produto),
             "foto_estampa_close": obter_foto_estampa_close(produto),
+            "fotos_estampas": obter_fotos_estampas_grid(produto),
             "campanha": campanha,
         }
     return {"foto_principal": foto_hero}  # novidade_semana, detalhe_textura
