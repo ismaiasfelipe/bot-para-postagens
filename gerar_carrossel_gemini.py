@@ -551,6 +551,16 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
     composicao em ambiente, uma foto final com a etiqueta "Estampa 2" da
     foto de referencia vazando pro resultado, e outra com 4 fronhas em
     vez do par (2) que a ficha tecnica real indica.
+
+    Criterio 6 (estrutura/zonas de tecido) adicionado em 07/10/2026 a
+    pedido do usuario, depois de ele apontar com precisao (analisando a
+    foto de referencia "produto no ambiente") que a geracao as vezes
+    foge da ESTRUTURA do design -- nao so a cor: a colcha tem o tecido
+    estampado SEMPRE em cima e o liso SEMPRE na saia/babado (nunca o
+    contrario), a fronha tem uma proporcao fixa entre o tecido liso da
+    borda e o estampado da face, e a saia da colcha tem que cair limpa
+    ate o chao (sem sobrar tecido amontoado nem deixar vao) -- isso vale
+    pra QUALQUER estampa usada, nao so a estampa original de referencia.
     """
     itens = extrair_itens_inclusos(produto.get("descricao_tecnica", ""))
     instrucao_itens = (
@@ -560,10 +570,10 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
         "(ex: 4 fronhas claramente separadas e visiveis, quando a ficha "
         "indica um par -- 2 fronhas). Na duvida, ou se as pecas estao "
         "parcialmente sobrepostas/dificeis de contar com certeza, "
-        "considere que passou.\n\n"
-        if itens else "\n"
+        "considere que passou.\n"
+        if itens else ""
     )
-    n_criterios = "cinco" if itens else "quatro"
+    n_criterios = "seis" if itens else "cinco"
     return (
         f"Voce e um revisor de qualidade de fotos de produto para "
         f"e-commerce de enxovais. O produto e '{produto['nome']}' "
@@ -592,6 +602,18 @@ def montar_prompt_verificacao_hero(produto: dict, n_referencias: int) -> str:
         "sobrepostos a foto -- padrao decorativo do tecido, reflexo ou "
         "textura NAO conta como texto.\n"
         f"{instrucao_itens}"
+        "6. Se o produto tiver mais de um tecido (ex: liso no babado/"
+        "acabamento, estampado no corpo principal -- como costuma "
+        "aparecer nas referencias): o tecido ESTAMPADO esta SOMENTE na "
+        "area/peca certa (corpo principal da colcha, face da fronha) e "
+        "o LISO SOMENTE na area certa (saia/babado da colcha, borda da "
+        "fronha), sem inverter nem os dois se misturando numa mesma "
+        "area? E, se a colcha tiver saia/babado, ela cai de forma limpa "
+        "ate perto do chao, sem sobrar tecido amontoado/espalhado no "
+        "chao nem deixar um vao grande? So REPROVE se isso estiver "
+        "CLARAMENTE errado (zonas trocadas, tecido vazando pra area "
+        "errada, ou tecido visivelmente amontoado no chao) -- na "
+        "duvida, ou se for uma diferenca sutil, considere que passou.\n"
         "Responda EXATAMENTE nesse formato, sem mais nada:\n"
         f"LINHA 1: 'SIM' se a imagem representa fielmente o produto, ou "
         f"'NAO' se reprovada por qualquer um dos {n_criterios} motivos "
@@ -699,15 +721,32 @@ def montar_prompt_composicao_ambiente(produto: dict) -> str:
         "-- nao reinterprete, redesenhe ou varie o tamanho do motivo, "
         "preserve os tracos finos (contorno, folhas, linhas) exatamente "
         "como aparecem nas imagens de referencia;\n"
-        "(b) SE O PRODUTO TIVER MAIS DE UM TECIDO/ESTAMPA (ex: uma cor "
-        "lisa na barra/babado/acabamento e um padrao floral/estampado no "
-        "corpo principal, como costuma aparecer nas referencias): respeite "
-        "EXATAMENTE qual parte de cada peca leva qual tecido, igual nas "
-        "referencias -- nao deixe o padrao estampado 'vazar' ou se "
-        "sobrepor a area do tecido liso (ou vice-versa). Se houver mais de "
-        "uma peca igual (ex: um par de fronhas), TODAS as pecas do par "
-        "devem usar a MESMA combinacao de tecidos, na MESMA posicao -- "
-        "nao varie a composicao entre uma peca e outra;\n"
+        "(b) ISSO TAMBEM E CRITICO -- siga a RISCA a ESTRUTURA/COSTURA do "
+        "design, nao so a cor/padrao: se o produto tiver mais de um "
+        "tecido (comum em colcha com babado + fronhas: um tecido LISO de "
+        "acabamento e um tecido ESTAMPADO no corpo principal, como "
+        "mostram as referencias), cada tecido vai SEMPRE na MESMA posicao "
+        "e PROPORCAO mostrada nas imagens de referencia, mudando so a cor/"
+        "padrao em si (nunca a posicao/proporcao):\n"
+        "    - na COLCHA: o tecido ESTAMPADO cobre toda a area de CIMA "
+        "(sobre o colchao), e o tecido LISO cobre toda a SAIA/BABADO "
+        "lateral que desce ate o chao -- nunca o contrario, e sem um "
+        "tecido invadir a area do outro (a linha de transicao entre eles "
+        "e reta e limpa, seguindo a borda, igual as referencias);\n"
+        "    - na FRONHA: a peca e dividida em 2 zonas na MESMA proporcao "
+        "das referencias (aprox. 1/3 numa faixa/aba de tecido LISO na "
+        "borda, 2/3 no tecido ESTAMPADO na face principal, geralmente com "
+        "uma rendinha/debrum marcando a linha de transicao entre as "
+        "duas) -- replique essa mesma divisao, nunca invertida, nunca com "
+        "um tecido tomando mais espaco que o outro;\n"
+        "    - se houver mais de uma peca igual (ex: par de fronhas), "
+        "TODAS usam a MESMA divisao de tecido, na MESMA posicao -- nunca "
+        "varie a composicao de uma peca pra outra;\n"
+        "    - a saia/babado da colcha cai de forma limpa ate a altura "
+        "real do produto (ver medidas na ficha tecnica acima, quando "
+        "informado) -- nem curta demais (deixando vao ate o chao), nem "
+        "amontoada/espalhada demais no chao (sobrando tecido); sem "
+        "nenhuma emenda, corte ou quebra visivel no meio da saia.\n"
         "(c) NAO mude nada da cena da IMAGEM 3 alem de inserir o produto "
         "-- mesmos moveis, mesma parede, mesma iluminacao, mesmo angulo;\n"
         "(d) a imagem final deve ser UMA UNICA fotografia limpa, de corpo "
