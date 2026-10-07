@@ -12,13 +12,25 @@ ESTRUTURA REAL JA EXISTENTE NO DRIVE (confirmada em 04/08/2026)
 produtos/                                  <- pasta raiz do catalogo
   cama (quarto)/
     lençol casal 4 pçs/
-      estampas/            -> fotos cruas do tecido/produto
+      estampas/            -> fotos INDIVIDUAIS de catalogo (fundo branco,
+                               sem embalagem), uma foto por estampa/cor
+                               real que esse modelo tem disponivel (ex:
+                               "5.png", "6.png", "9.png" -- numeracao do
+                               fornecedor). imagem_estampa so pega UMA
+                               dessas quando ha exatamente 1 (ver
+                               _baixar_estampa_se_unica); fotos_estampas
+                               baixa TODAS, pra dar variedade de estampa
+                               real entre slides (confirmado pelo usuario
+                               em 07/10/2026 -- NAO confundir com "fotos
+                               variadas" abaixo).
       produto no ambiente/ -> fotos do produto em cena/decoracao
       fotos variadas/      -> fotos soltas do produto disperso/empilhado/
-                               dobrado (baixadas TODAS, nao so a 1a --
-                               servem de referencia de composicao real
-                               pra gerar_composicao_dispersa_com_verificacao,
-                               ver gerar_carrossel_gemini.py)
+                               dobrado, mostrando VARIAS pecas juntas numa
+                               mesma foto (ex: pilha de colchas embaladas)
+                               -- NAO sao estampas individuais, servem so
+                               de referencia de composicao real pra
+                               gerar_composicao_dispersa_com_verificacao
+                               (baixadas TODAS, ver gerar_carrossel_gemini.py)
       descrição/           -> Google Doc com ficha tecnica
     colcha preguiada sarja casal-box/
     ... (outros produtos da categoria)
@@ -169,9 +181,26 @@ def montar_banco_de_produtos() -> dict:
             # uma costuma mostrar o produto disperso/empilhado/dobrado numa
             # composicao real diferente, usadas como referencia de
             # composicao na geracao (ver montar_prompt_composicao_dispersa).
+            # NAO sao estampas individuais -- e so uma foto de referencia
+            # com varias pecas juntas (confirmado pelo usuario em
+            # 07/10/2026, depois de uma tentativa errada de usar essa
+            # pasta pra variar estampa entre slides).
             fotos_variadas = _baixar_todas_imagens(
                 servico, subpastas.get("fotos variadas"),
                 PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_variada"
+            )
+
+            # fotos_estampas: TODAS as fotos individuais da subpasta
+            # "estampas" (nao so quando ha exatamente 1, como
+            # imagem_estampa acima) -- cada uma mostra UMA estampa real
+            # diferente que esse mesmo modelo tem disponivel, em foto
+            # limpa de catalogo (fundo branco, sem embalagem/plastico).
+            # Usadas pra dar variedade de estampa de verdade entre slides
+            # (ver gerar_carrossel_gemini.gerar_foto_composta_ambiente_
+            # com_verificacao, parametro referencias_fidelidade_override).
+            fotos_estampas = _baixar_todas_imagens(
+                servico, subpastas.get("estampas"),
+                PASTA_DOWNLOAD_LOCAL / f"p{contador:03d}_estampa_individual"
             )
 
             if not caminho_ambiente and not caminho_estampa:
@@ -201,11 +230,13 @@ def montar_banco_de_produtos() -> dict:
                 "imagem_ambiente": caminho_ambiente,
                 "imagem_estampa": caminho_estampa,
                 "fotos_variadas": fotos_variadas,
+                "fotos_estampas": fotos_estampas,
             })
             print(f"  [ok] {nome_produto}"
                   f" (ambiente={'sim' if caminho_ambiente else 'nao'},"
                   f" estampa={'sim' if caminho_estampa else 'nao'},"
-                  f" variadas={len(fotos_variadas)})")
+                  f" variadas={len(fotos_variadas)},"
+                  f" estampas_individuais={len(fotos_estampas)})")
             contador += 1
 
     return {"produtos": produtos}
