@@ -14,6 +14,12 @@
       "fotos_variadas": [
         "banco_local/p002_variada_0.jpeg",
         "banco_local/p002_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p002_estampa_0.jpeg",
+        "banco_local/p002_estampa_1.jpeg",
+        "banco_local/p002_estampa_2.jpeg",
+        "banco_local/p002_estampa_3.jpeg"
       ]
     },
     {
@@ -27,7 +33,10 @@
       "descricao_tecnica": "",
       "imagem_ambiente": "banco_local/p003_ambiente.png",
       "imagem_estampa": "banco_local/p003_estampa.jpeg",
-      "fotos_variadas": []
+      "fotos_variadas": [],
+      "fotos_estampas": [
+        "banco_local/p003_estampa_0.jpeg"
+      ]
     },
     {
       "id": "p004",
@@ -43,6 +52,10 @@
       "fotos_variadas": [
         "banco_local/p004_variada_0.jpeg",
         "banco_local/p004_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p004_estampa_0.jpeg",
+        "banco_local/p004_estampa_1.jpeg"
       ]
     },
     {
@@ -59,6 +72,9 @@
       "fotos_variadas": [
         "banco_local/p005_variada_0.jpeg",
         "banco_local/p005_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p005_estampa_0.png"
       ]
     },
     {
@@ -75,6 +91,12 @@
       "fotos_variadas": [
         "banco_local/p006_variada_0.jpeg",
         "banco_local/p006_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p006_estampa_0.png",
+        "banco_local/p006_estampa_1.png",
+        "banco_local/p006_estampa_2.png",
+        "banco_local/p006_estampa_3.png"
       ]
     },
     {
@@ -91,6 +113,18 @@
       "fotos_variadas": [
         "banco_local/p007_variada_0.jpeg",
         "banco_local/p007_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p007_estampa_0.jpeg",
+        "banco_local/p007_estampa_1.jpeg",
+        "banco_local/p007_estampa_2.jpeg",
+        "banco_local/p007_estampa_3.jpeg",
+        "banco_local/p007_estampa_4.jpeg",
+        "banco_local/p007_estampa_5.jpeg",
+        "banco_local/p007_estampa_6.jpeg",
+        "banco_local/p007_estampa_7.jpeg",
+        "banco_local/p007_estampa_8.jpeg",
+        "banco_local/p007_estampa_9.jpeg"
       ]
     },
     {
@@ -107,6 +141,12 @@
       "fotos_variadas": [
         "banco_local/p008_variada_0.jpeg",
         "banco_local/p008_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p008_estampa_0.jpeg",
+        "banco_local/p008_estampa_1.jpeg",
+        "banco_local/p008_estampa_2.jpeg",
+        "banco_local/p008_estampa_3.jpeg"
       ]
     },
     {
@@ -123,6 +163,9 @@
       "fotos_variadas": [
         "banco_local/p009_variada_0.jpeg",
         "banco_local/p009_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p009_estampa_0.jpeg"
       ]
     },
     {
@@ -139,6 +182,9 @@
       "fotos_variadas": [
         "banco_local/p010_variada_0.jpeg",
         "banco_local/p010_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p010_estampa_0.jpeg"
       ]
     },
     {
@@ -155,6 +201,9 @@
       "fotos_variadas": [
         "banco_local/p011_variada_0.jpeg",
         "banco_local/p011_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p011_estampa_0.jpeg"
       ]
     },
     {
@@ -171,6 +220,9 @@
       "fotos_variadas": [
         "banco_local/p012_variada_0.jpeg",
         "banco_local/p012_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p012_estampa_0.jpeg"
       ]
     },
     {
@@ -187,6 +239,20 @@
       "fotos_variadas": [
         "banco_local/p013_variada_0.jpeg",
         "banco_local/p013_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p013_estampa_0.jfif",
+        "banco_local/p013_estampa_1.jpeg",
+        "banco_local/p013_estampa_2.jpeg",
+        "banco_local/p013_estampa_3.jpeg",
+        "banco_local/p013_estampa_4.jpeg",
+        "banco_local/p013_estampa_5.jpeg",
+        "banco_local/p013_estampa_6.jpeg",
+        "banco_local/p013_estampa_7.jpeg",
+        "banco_local/p013_estampa_8.jpeg",
+        "banco_local/p013_estampa_9.jpeg",
+        "banco_local/p013_estampa_10.jpeg",
+        "banco_local/p013_estampa_11.jpeg"
       ]
     },
     {
@@ -203,6 +269,12 @@
       "fotos_variadas": [
         "banco_local/p014_variada_0.jpeg",
         "banco_local/p014_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p014_estampa_0.jpeg",
+        "banco_local/p014_estampa_1.jpeg",
+        "banco_local/p014_estampa_2.jpeg",
+        "banco_local/p014_estampa_3.jpeg"
       ]
     },
     {
@@ -219,6 +291,10 @@
       "fotos_variadas": [
         "banco_local/p015_variada_0.jpeg",
         "banco_local/p015_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p015_estampa_0.png",
+        "banco_local/p015_estampa_1.png"
       ]
     },
     {
@@ -235,6 +311,10 @@
       "fotos_variadas": [
         "banco_local/p016_variada_0.jpeg",
         "banco_local/p016_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p016_estampa_0.jpeg",
+        "banco_local/p016_estampa_1.jpeg"
       ]
     },
     {
@@ -251,6 +331,13 @@
       "fotos_variadas": [
         "banco_local/p017_variada_0.jpeg",
         "banco_local/p017_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p017_estampa_0.jpeg",
+        "banco_local/p017_estampa_1.jpeg",
+        "banco_local/p017_estampa_2.jpeg",
+        "banco_local/p017_estampa_3.jpeg",
+        "banco_local/p017_estampa_4.jpeg"
       ]
     },
     {
@@ -267,6 +354,13 @@
       "fotos_variadas": [
         "banco_local/p018_variada_0.jpeg",
         "banco_local/p018_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p018_estampa_0.png",
+        "banco_local/p018_estampa_1.png",
+        "banco_local/p018_estampa_2.png",
+        "banco_local/p018_estampa_3.png",
+        "banco_local/p018_estampa_4.png"
       ]
     },
     {
@@ -283,6 +377,14 @@
       "fotos_variadas": [
         "banco_local/p019_variada_0.jpeg",
         "banco_local/p019_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p019_estampa_0.jpeg",
+        "banco_local/p019_estampa_1.jpeg",
+        "banco_local/p019_estampa_2.jpeg",
+        "banco_local/p019_estampa_3.jpeg",
+        "banco_local/p019_estampa_4.jpeg",
+        "banco_local/p019_estampa_5.jpeg"
       ]
     },
     {
@@ -299,6 +401,14 @@
       "fotos_variadas": [
         "banco_local/p020_variada_0.jpeg",
         "banco_local/p020_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p020_estampa_0.jpeg",
+        "banco_local/p020_estampa_1.jpeg",
+        "banco_local/p020_estampa_2.jpeg",
+        "banco_local/p020_estampa_3.jpeg",
+        "banco_local/p020_estampa_4.jpeg",
+        "banco_local/p020_estampa_5.jpeg"
       ]
     },
     {
@@ -315,6 +425,9 @@
       "fotos_variadas": [
         "banco_local/p021_variada_0.jpeg",
         "banco_local/p021_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p021_estampa_0.jpeg"
       ]
     },
     {
@@ -331,6 +444,9 @@
       "fotos_variadas": [
         "banco_local/p022_variada_0.jpeg",
         "banco_local/p022_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p022_estampa_0.jpeg"
       ]
     },
     {
@@ -347,6 +463,21 @@
       "fotos_variadas": [
         "banco_local/p023_variada_0.jpeg",
         "banco_local/p023_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p023_estampa_0.jpeg",
+        "banco_local/p023_estampa_1.jpeg",
+        "banco_local/p023_estampa_2.jpeg",
+        "banco_local/p023_estampa_3.jpeg",
+        "banco_local/p023_estampa_4.jpeg",
+        "banco_local/p023_estampa_5.jpeg",
+        "banco_local/p023_estampa_6.jpeg",
+        "banco_local/p023_estampa_7.jpeg",
+        "banco_local/p023_estampa_8.jpeg",
+        "banco_local/p023_estampa_9.jpeg",
+        "banco_local/p023_estampa_10.jpeg",
+        "banco_local/p023_estampa_11.jpeg",
+        "banco_local/p023_estampa_12.jpeg"
       ]
     },
     {
@@ -363,6 +494,59 @@
       "fotos_variadas": [
         "banco_local/p024_variada_0.jpeg",
         "banco_local/p024_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p024_estampa_0.jpeg",
+        "banco_local/p024_estampa_1.jpeg",
+        "banco_local/p024_estampa_2.jpeg",
+        "banco_local/p024_estampa_3.jpeg",
+        "banco_local/p024_estampa_4.jpeg",
+        "banco_local/p024_estampa_5.jpeg",
+        "banco_local/p024_estampa_6.jpeg",
+        "banco_local/p024_estampa_7.jpeg",
+        "banco_local/p024_estampa_8.jpeg",
+        "banco_local/p024_estampa_9.jpeg",
+        "banco_local/p024_estampa_10.jpeg",
+        "banco_local/p024_estampa_11.jpeg",
+        "banco_local/p024_estampa_12.jpeg",
+        "banco_local/p024_estampa_13.jpeg",
+        "banco_local/p024_estampa_14.jpeg",
+        "banco_local/p024_estampa_15.jpeg",
+        "banco_local/p024_estampa_16.jpeg",
+        "banco_local/p024_estampa_17.jpeg",
+        "banco_local/p024_estampa_18.jpeg",
+        "banco_local/p024_estampa_19.jpeg",
+        "banco_local/p024_estampa_20.jpeg",
+        "banco_local/p024_estampa_21.jpeg",
+        "banco_local/p024_estampa_22.jpeg",
+        "banco_local/p024_estampa_23.jpeg",
+        "banco_local/p024_estampa_24.jpeg",
+        "banco_local/p024_estampa_25.jpeg",
+        "banco_local/p024_estampa_26.jpeg",
+        "banco_local/p024_estampa_27.jpeg",
+        "banco_local/p024_estampa_28.jpeg",
+        "banco_local/p024_estampa_29.jpeg",
+        "banco_local/p024_estampa_30.jpeg",
+        "banco_local/p024_estampa_31.jpeg",
+        "banco_local/p024_estampa_32.jpeg",
+        "banco_local/p024_estampa_33.jpeg",
+        "banco_local/p024_estampa_34.jpeg",
+        "banco_local/p024_estampa_35.jpeg",
+        "banco_local/p024_estampa_36.jpeg",
+        "banco_local/p024_estampa_37.jpeg",
+        "banco_local/p024_estampa_38.jpeg",
+        "banco_local/p024_estampa_39.jpeg",
+        "banco_local/p024_estampa_40.jpeg",
+        "banco_local/p024_estampa_41.jpeg",
+        "banco_local/p024_estampa_42.jpeg",
+        "banco_local/p024_estampa_43.jpeg",
+        "banco_local/p024_estampa_44.jpeg",
+        "banco_local/p024_estampa_45.jpeg",
+        "banco_local/p024_estampa_46.jpeg",
+        "banco_local/p024_estampa_47.jpeg",
+        "banco_local/p024_estampa_48.jpeg",
+        "banco_local/p024_estampa_49.jpeg",
+        "banco_local/p024_estampa_50.jpeg"
       ]
     },
     {
@@ -379,6 +563,11 @@
       "fotos_variadas": [
         "banco_local/p025_variada_0.jpeg",
         "banco_local/p025_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p025_estampa_0.png",
+        "banco_local/p025_estampa_1.png",
+        "banco_local/p025_estampa_2.png"
       ]
     },
     {
@@ -395,6 +584,14 @@
       "fotos_variadas": [
         "banco_local/p026_variada_0.jpeg",
         "banco_local/p026_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p026_estampa_0.jpeg",
+        "banco_local/p026_estampa_1.jpeg",
+        "banco_local/p026_estampa_2.jpeg",
+        "banco_local/p026_estampa_3.jpeg",
+        "banco_local/p026_estampa_4.jpeg",
+        "banco_local/p026_estampa_5.jpeg"
       ]
     },
     {
@@ -411,6 +608,13 @@
       "fotos_variadas": [
         "banco_local/p027_variada_0.jpeg",
         "banco_local/p027_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p027_estampa_0.jpeg",
+        "banco_local/p027_estampa_1.jpeg",
+        "banco_local/p027_estampa_2.jpeg",
+        "banco_local/p027_estampa_3.jpeg",
+        "banco_local/p027_estampa_4.jpeg"
       ]
     },
     {
@@ -427,6 +631,13 @@
       "fotos_variadas": [
         "banco_local/p028_variada_0.jpeg",
         "banco_local/p028_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p028_estampa_0.jpeg",
+        "banco_local/p028_estampa_1.jpeg",
+        "banco_local/p028_estampa_2.jpeg",
+        "banco_local/p028_estampa_3.jpeg",
+        "banco_local/p028_estampa_4.jpeg"
       ]
     },
     {
@@ -443,6 +654,13 @@
       "fotos_variadas": [
         "banco_local/p029_variada_0.jpeg",
         "banco_local/p029_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p029_estampa_0.jpeg",
+        "banco_local/p029_estampa_1.jpeg",
+        "banco_local/p029_estampa_2.jpeg",
+        "banco_local/p029_estampa_3.jpeg",
+        "banco_local/p029_estampa_4.jpeg"
       ]
     },
     {
@@ -459,6 +677,15 @@
       "fotos_variadas": [
         "banco_local/p030_variada_0.jpeg",
         "banco_local/p030_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p030_estampa_0.jpeg",
+        "banco_local/p030_estampa_1.jpeg",
+        "banco_local/p030_estampa_2.jpeg",
+        "banco_local/p030_estampa_3.jpeg",
+        "banco_local/p030_estampa_4.jpeg",
+        "banco_local/p030_estampa_5.jpeg",
+        "banco_local/p030_estampa_6.jpeg"
       ]
     },
     {
@@ -475,6 +702,11 @@
       "fotos_variadas": [
         "banco_local/p031_variada_0.jpeg",
         "banco_local/p031_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p031_estampa_0.jpeg",
+        "banco_local/p031_estampa_1.jpeg",
+        "banco_local/p031_estampa_2.jpeg"
       ]
     },
     {
@@ -491,6 +723,10 @@
       "fotos_variadas": [
         "banco_local/p032_variada_0.jpeg",
         "banco_local/p032_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p032_estampa_0.jfif",
+        "banco_local/p032_estampa_1.jfif"
       ]
     },
     {
@@ -507,6 +743,12 @@
       "fotos_variadas": [
         "banco_local/p033_variada_0.jpeg",
         "banco_local/p033_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p033_estampa_0.png",
+        "banco_local/p033_estampa_1.png",
+        "banco_local/p033_estampa_2.png",
+        "banco_local/p033_estampa_3.png"
       ]
     },
     {
@@ -523,6 +765,17 @@
       "fotos_variadas": [
         "banco_local/p034_variada_0.jpeg",
         "banco_local/p034_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p034_estampa_0.jpeg",
+        "banco_local/p034_estampa_1.jpeg",
+        "banco_local/p034_estampa_2.jpeg",
+        "banco_local/p034_estampa_3.jpeg",
+        "banco_local/p034_estampa_4.jpeg",
+        "banco_local/p034_estampa_5.jpeg",
+        "banco_local/p034_estampa_6.jpeg",
+        "banco_local/p034_estampa_7.jpeg",
+        "banco_local/p034_estampa_8.jpeg"
       ]
     },
     {
@@ -539,6 +792,11 @@
       "fotos_variadas": [
         "banco_local/p035_variada_0.jpeg",
         "banco_local/p035_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p035_estampa_0.jpeg",
+        "banco_local/p035_estampa_1.jpeg",
+        "banco_local/p035_estampa_2.jpeg"
       ]
     },
     {
@@ -555,6 +813,9 @@
       "fotos_variadas": [
         "banco_local/p036_variada_0.jpeg",
         "banco_local/p036_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p036_estampa_0.jfif"
       ]
     },
     {
@@ -571,6 +832,9 @@
       "fotos_variadas": [
         "banco_local/p037_variada_0.jpeg",
         "banco_local/p037_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p037_estampa_0.jfif"
       ]
     },
     {
@@ -587,6 +851,9 @@
       "fotos_variadas": [
         "banco_local/p038_variada_0.jpeg",
         "banco_local/p038_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p038_estampa_0.jfif"
       ]
     },
     {
@@ -603,6 +870,13 @@
       "fotos_variadas": [
         "banco_local/p039_variada_0.jpeg",
         "banco_local/p039_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p039_estampa_0.jpeg",
+        "banco_local/p039_estampa_1.jpeg",
+        "banco_local/p039_estampa_2.jpeg",
+        "banco_local/p039_estampa_3.jpeg",
+        "banco_local/p039_estampa_4.jpeg"
       ]
     },
     {
@@ -618,6 +892,12 @@
       "imagem_estampa": null,
       "fotos_variadas": [
         "banco_local/p040_variada_0.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p040_estampa_0.jpeg",
+        "banco_local/p040_estampa_1.jpeg",
+        "banco_local/p040_estampa_2.jpeg",
+        "banco_local/p040_estampa_3.jpeg"
       ]
     },
     {
@@ -634,6 +914,14 @@
       "fotos_variadas": [
         "banco_local/p041_variada_0.jpeg",
         "banco_local/p041_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p041_estampa_0.jpeg",
+        "banco_local/p041_estampa_1.jpeg",
+        "banco_local/p041_estampa_2.jpeg",
+        "banco_local/p041_estampa_3.jpeg",
+        "banco_local/p041_estampa_4.jpeg",
+        "banco_local/p041_estampa_5.jpeg"
       ]
     },
     {
@@ -650,6 +938,14 @@
       "fotos_variadas": [
         "banco_local/p042_variada_0.jpeg",
         "banco_local/p042_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p042_estampa_0.jpeg",
+        "banco_local/p042_estampa_1.jpeg",
+        "banco_local/p042_estampa_2.jpeg",
+        "banco_local/p042_estampa_3.jpeg",
+        "banco_local/p042_estampa_4.jpeg",
+        "banco_local/p042_estampa_5.jpeg"
       ]
     },
     {
@@ -666,6 +962,17 @@
       "fotos_variadas": [
         "banco_local/p043_variada_0.jpeg",
         "banco_local/p043_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p043_estampa_0.jpeg",
+        "banco_local/p043_estampa_1.jpeg",
+        "banco_local/p043_estampa_2.jpeg",
+        "banco_local/p043_estampa_3.jpeg",
+        "banco_local/p043_estampa_4.jpeg",
+        "banco_local/p043_estampa_5.jpeg",
+        "banco_local/p043_estampa_6.jpeg",
+        "banco_local/p043_estampa_7.jpeg",
+        "banco_local/p043_estampa_8.jpeg"
       ]
     },
     {
@@ -682,6 +989,11 @@
       "fotos_variadas": [
         "banco_local/p044_variada_0.jpeg",
         "banco_local/p044_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p044_estampa_0.jpeg",
+        "banco_local/p044_estampa_1.jpeg",
+        "banco_local/p044_estampa_2.jpeg"
       ]
     },
     {
@@ -698,6 +1010,14 @@
       "fotos_variadas": [
         "banco_local/p045_variada_0.jpeg",
         "banco_local/p045_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p045_estampa_0.png",
+        "banco_local/p045_estampa_1.png",
+        "banco_local/p045_estampa_2.png",
+        "banco_local/p045_estampa_3.png",
+        "banco_local/p045_estampa_4.png",
+        "banco_local/p045_estampa_5.png"
       ]
     },
     {
@@ -737,6 +1057,12 @@
       "fotos_variadas": [
         "banco_local/p047_variada_0.jpeg",
         "banco_local/p047_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p047_estampa_0.jpeg",
+        "banco_local/p047_estampa_1.jpeg",
+        "banco_local/p047_estampa_2.jpeg",
+        "banco_local/p047_estampa_3.jpeg"
       ]
     },
     {
@@ -753,6 +1079,29 @@
       "fotos_variadas": [
         "banco_local/p049_variada_0.jpeg",
         "banco_local/p049_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p049_estampa_0.jpeg",
+        "banco_local/p049_estampa_1.jpeg",
+        "banco_local/p049_estampa_2.jpeg",
+        "banco_local/p049_estampa_3.jpeg",
+        "banco_local/p049_estampa_4.jpeg",
+        "banco_local/p049_estampa_5.jpeg",
+        "banco_local/p049_estampa_6.jpeg",
+        "banco_local/p049_estampa_7.jpeg",
+        "banco_local/p049_estampa_8.jpeg",
+        "banco_local/p049_estampa_9.jpeg",
+        "banco_local/p049_estampa_10.jpeg",
+        "banco_local/p049_estampa_11.jpeg",
+        "banco_local/p049_estampa_12.jpeg",
+        "banco_local/p049_estampa_13.jpeg",
+        "banco_local/p049_estampa_14.jpeg",
+        "banco_local/p049_estampa_15.jpeg",
+        "banco_local/p049_estampa_16.jpeg",
+        "banco_local/p049_estampa_17.jpeg",
+        "banco_local/p049_estampa_18.jpeg",
+        "banco_local/p049_estampa_19.jpeg",
+        "banco_local/p049_estampa_20.jpeg"
       ]
     },
     {
@@ -769,6 +1118,22 @@
       "fotos_variadas": [
         "banco_local/p050_variada_0.jpeg",
         "banco_local/p050_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p050_estampa_0.jpeg",
+        "banco_local/p050_estampa_1.jpeg",
+        "banco_local/p050_estampa_2.jpeg",
+        "banco_local/p050_estampa_3.jpeg",
+        "banco_local/p050_estampa_4.jpeg",
+        "banco_local/p050_estampa_5.jpeg",
+        "banco_local/p050_estampa_6.jpeg",
+        "banco_local/p050_estampa_7.jpeg",
+        "banco_local/p050_estampa_8.jpeg",
+        "banco_local/p050_estampa_9.jpeg",
+        "banco_local/p050_estampa_10.jpeg",
+        "banco_local/p050_estampa_11.jpeg",
+        "banco_local/p050_estampa_12.jpeg",
+        "banco_local/p050_estampa_13.jpeg"
       ]
     },
     {
@@ -785,6 +1150,20 @@
       "fotos_variadas": [
         "banco_local/p051_variada_0.jpeg",
         "banco_local/p051_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p051_estampa_0.jpeg",
+        "banco_local/p051_estampa_1.jpeg",
+        "banco_local/p051_estampa_2.jpeg",
+        "banco_local/p051_estampa_3.jpeg",
+        "banco_local/p051_estampa_4.jpeg",
+        "banco_local/p051_estampa_5.jpeg",
+        "banco_local/p051_estampa_6.jpeg",
+        "banco_local/p051_estampa_7.jpeg",
+        "banco_local/p051_estampa_8.jpeg",
+        "banco_local/p051_estampa_9.jpeg",
+        "banco_local/p051_estampa_10.jpeg",
+        "banco_local/p051_estampa_11.jpeg"
       ]
     },
     {
@@ -801,6 +1180,25 @@
       "fotos_variadas": [
         "banco_local/p052_variada_0.jpeg",
         "banco_local/p052_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p052_estampa_0.jpeg",
+        "banco_local/p052_estampa_1.jpeg",
+        "banco_local/p052_estampa_2.jpeg",
+        "banco_local/p052_estampa_3.jpeg",
+        "banco_local/p052_estampa_4.jpeg",
+        "banco_local/p052_estampa_5.jpeg",
+        "banco_local/p052_estampa_6.jpeg",
+        "banco_local/p052_estampa_7.jpeg",
+        "banco_local/p052_estampa_8.jpeg",
+        "banco_local/p052_estampa_9.jpeg",
+        "banco_local/p052_estampa_10.jpeg",
+        "banco_local/p052_estampa_11.jpeg",
+        "banco_local/p052_estampa_12.jpeg",
+        "banco_local/p052_estampa_13.jpeg",
+        "banco_local/p052_estampa_14.jpeg",
+        "banco_local/p052_estampa_15.jpeg",
+        "banco_local/p052_estampa_16.jpeg"
       ]
     },
     {
@@ -817,6 +1215,20 @@
       "fotos_variadas": [
         "banco_local/p053_variada_0.jpeg",
         "banco_local/p053_variada_1.jpeg"
+      ],
+      "fotos_estampas": [
+        "banco_local/p053_estampa_0.jpeg",
+        "banco_local/p053_estampa_1.jpeg",
+        "banco_local/p053_estampa_2.jpeg",
+        "banco_local/p053_estampa_3.jpeg",
+        "banco_local/p053_estampa_4.jpeg",
+        "banco_local/p053_estampa_5.jpeg",
+        "banco_local/p053_estampa_6.jpeg",
+        "banco_local/p053_estampa_7.jpeg",
+        "banco_local/p053_estampa_8.jpeg",
+        "banco_local/p053_estampa_9.jpeg",
+        "banco_local/p053_estampa_10.jpeg",
+        "banco_local/p053_estampa_11.jpeg"
       ]
     }
   ]
